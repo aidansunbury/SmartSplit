@@ -8,5 +8,4 @@ export default {
   dbCredentials: {
     url: env.DATABASE_URL,
   },
-  tablesFilter: ["Project-Solution-SmartSplit_*"],
 } satisfies Config;

@@ -13,6 +13,9 @@ import { ZodError } from "zod";
 
 import { getServerAuthSession } from "~/server/auth";
 import { db } from "~/server/db";
+import { z } from "zod";
+import { usersToGroups } from "~/server/db/schema";
+import { eq, and } from "drizzle-orm";
 
 /**
  * 1. CONTEXT
@@ -128,6 +131,33 @@ export const protectedProcedure = t.procedure
       ctx: {
         // infers the `session` as non-nullable
         session: { ...ctx.session, user: ctx.session.user },
+      },
+    });
+  });
+
+// Validate that the user is in the group
+export const groupProcedure = protectedProcedure
+  .input(z.object({ groupId: z.string() }))
+  .use(async ({ ctx, next, input }) => {
+    // Using this middleware should required the test prop
+    const [userInGroup] = await db
+      .select()
+      .from(usersToGroups)
+      .where(
+        and(
+          eq(usersToGroups.userId, ctx.session.user.id),
+          eq(usersToGroups.groupId, input.groupId),
+        ),
+      );
+    if (!userInGroup) {
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: "User is not in the group or the group does not exist",
+      });
+    }
+    return next({
+      ctx: {
+        ...ctx,
       },
     });
   });
