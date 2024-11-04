@@ -126,6 +126,7 @@ export const expenses = createTable(
   },
   (t) => ({
     groupIdx: index("expenses_group_idx").on(t.groupId),
+    createdAtIdx: index("expenses_created_at_idx").on(t.createdAt),
   }),
 );
 
@@ -143,7 +144,7 @@ export const payments = createTable(
       .primaryKey()
       .$defaultFn(() => createPrefixedUlid("pay")),
     notes: text("notes"),
-    amount: integer("amount"),
+    amount: integer("amount").notNull(),
     fromUserId: varchar("fromUserId", { length: 255 })
       .notNull()
       .references(() => users.id),
@@ -219,6 +220,8 @@ export const commentsRelations = relations(comments, ({ one }) => ({
     references: [payments.id],
   }),
 }));
+
+// TODO add categories
 
 //* NextAuth Tables
 export const accounts = createTable(
