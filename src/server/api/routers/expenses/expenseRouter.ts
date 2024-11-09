@@ -4,11 +4,13 @@ import { createTRPCRouter, groupProcedure } from "~/server/api/trpc";
 import { groups, expenses, usersToGroups } from "~/server/db/schema";
 import { safeInsertSchema } from "~/lib/safeInsertSchema";
 import { TRPCError } from "@trpc/server";
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 
 export const expenseRouter = createTRPCRouter({
   create: groupProcedure
-    .input(safeInsertSchema(expenses))
+    .input(
+      safeInsertSchema(expenses).merge(z.object({ amount: z.number().int() })),
+    )
     .mutation(async ({ input, ctx }) => {
       const newExpense = await ctx.db.transaction(async (trx) => {
         const newExpense = trx
@@ -18,18 +20,21 @@ export const expenseRouter = createTRPCRouter({
             userId: ctx.session.user.id,
           })
           .returning();
+
         const groupUsers = await trx.query.groups.findFirst({
           where: eq(groups.id, input.groupId),
           with: {
             users: true,
           },
         });
+
         if (!groupUsers) {
           throw new TRPCError({
             code: "NOT_FOUND",
             message: "Group not found",
           });
         }
+
         // If there is only one user in the group, don't modify the balances as there is no one to share the expense with
         if (groupUsers.users.length < 2) {
           const [awaitedExpense] = await newExpense;
@@ -76,7 +81,7 @@ export const expenseRouter = createTRPCRouter({
             .update(usersToGroups)
             .set({
               // @ts-ignore: Owed is an integer
-              balance: usersToGroups.balance + owed,
+              balance: sql`${usersToGroups.balance} + ${owed}`,
             })
             .where(
               and(

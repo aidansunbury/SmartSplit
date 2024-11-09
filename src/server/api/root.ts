@@ -15,7 +15,7 @@ export const appRouter = createTRPCRouter({
   payments: paymentsRouter,
   balance: balancesRouter,
   expense: expenseRouter,
-  comment: commentsRouter,
+  // comment: commentsRouter,
 });
 
 // export type definition of API

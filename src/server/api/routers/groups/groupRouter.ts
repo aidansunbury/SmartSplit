@@ -3,7 +3,7 @@ import { z } from "zod";
 import {
   createTRPCRouter,
   protectedProcedure,
-  publicProcedure,
+  groupProcedure,
 } from "~/server/api/trpc";
 import { groups, usersToGroups } from "~/server/db/schema";
 import { safeInsertSchema } from "~/lib/safeInsertSchema";
@@ -19,7 +19,7 @@ export const groupRouter = createTRPCRouter({
         ownerId: true,
       }),
     )
-    .query(async ({ input, ctx }) => {
+    .mutation(async ({ input, ctx }) => {
       const newGroup = await ctx.db.transaction(async (trx) => {
         const [newGroup] = await trx
           .insert(groups)
@@ -47,6 +47,7 @@ export const groupRouter = createTRPCRouter({
             message: "Unable to add member to group",
           });
         }
+        return newGroup;
       });
 
       return newGroup;
@@ -73,6 +74,13 @@ export const groupRouter = createTRPCRouter({
             groupId: group.id,
             userId: ctx.session.user.id,
           })
+          .onConflictDoUpdate({
+            target: [usersToGroups.groupId, usersToGroups.userId],
+            set: {
+              groupId: group.id,
+              userId: ctx.session.user.id,
+            },
+          })
           .returning();
 
         if (!newGroupMember) {
@@ -84,6 +92,36 @@ export const groupRouter = createTRPCRouter({
         }
         return group;
       });
+      return group;
+    }),
+  get: groupProcedure
+    .meta({
+      description: "Get a group by ID, including all users in the group",
+    })
+    .query(async ({ input, ctx }) => {
+      const group = await ctx.db.query.groups.findFirst({
+        where: eq(groups.id, input.groupId),
+        with: {
+          users: {
+            with: {
+              user: true,
+            },
+            columns: {
+              balance: true,
+              groupId: false,
+              userId: false,
+            },
+          },
+        },
+      });
+
+      if (!group) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Group not found",
+        });
+      }
+
       return group;
     }),
 });
