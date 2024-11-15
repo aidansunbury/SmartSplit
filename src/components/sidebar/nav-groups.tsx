@@ -9,6 +9,8 @@ import {
 } from "@/components/ui/sidebar";
 import { useQueryState } from "nuqs";
 import { api } from "~/trpc/react";
+import { CreateGroup } from "../CreateGroup";
+import { JoinGroup } from "../JoinGroup";
 
 export const SidebarGroups = () => {
   const { data: groups } = api.group.list.useQuery();
@@ -33,6 +35,12 @@ export const SidebarGroups = () => {
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}
+          <SidebarMenuItem>
+            <CreateGroup />
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <JoinGroup />
+          </SidebarMenuItem>
         </SidebarMenu>
       </SidebarGroupContent>
     </SidebarGroup>

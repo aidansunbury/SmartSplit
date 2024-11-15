@@ -108,7 +108,7 @@ export const expenses = createTable(
       .$defaultFn(() => createPrefixedUlid("exp")),
     // In cents
     amount: integer("amount").notNull(),
-    description: text("description"),
+    notes: text("notes"),
     // TODO may want to enforce that amount is positive, same with payments
     groupId: varchar("groupId", { length: 255 })
       .notNull()
@@ -157,6 +157,7 @@ export const payments = createTable(
   },
   (t) => ({
     groupIdx: index("payments_group_idx").on(t.groupId),
+    createdAtIdx: index("payments_created_at_idx").on(t.createdAt),
   }),
 );
 

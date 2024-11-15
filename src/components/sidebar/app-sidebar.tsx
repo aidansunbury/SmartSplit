@@ -9,7 +9,7 @@ import {
   SidebarHeader,
   SidebarRail,
 } from "@/components/ui/sidebar";
-import { NavUser } from "~/components/nav-user";
+import { NavUser } from "~/components/sidebar/nav-user";
 import { SidebarGroups } from "./nav-groups";
 
 export type UserAvatar = {
@@ -24,8 +24,8 @@ export function AppSidebar({
   ...props
 }: React.ComponentProps<typeof Sidebar> & { user: UserAvatar }) {
   return (
-    <Sidebar collapsible="icon" {...props}>
-      <SidebarHeader>{/* <TeamSwitcher teams={data.teams} /> */}</SidebarHeader>
+    <Sidebar variant="inset" {...props}>
+      {/* <SidebarHeader><TeamSwitcher teams={data.teams} /></SidebarHeader> */}
       <SidebarContent>
         <SidebarGroups />
       </SidebarContent>

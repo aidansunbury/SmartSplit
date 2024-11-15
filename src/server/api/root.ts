@@ -3,6 +3,7 @@ import { balancesRouter } from "./routers/balances/balancesRouter";
 import { expenseRouter } from "./routers/expenses/expenseRouter";
 import { groupRouter } from "./routers/groups/groupRouter";
 import { paymentsRouter } from "./routers/payments/paymentsRouter";
+import { feedRouter } from "./routers/feed/feedRouter";
 
 /**
  * This is the primary router for your server.
@@ -14,7 +15,7 @@ export const appRouter = createTRPCRouter({
   payments: paymentsRouter,
   balance: balancesRouter,
   expense: expenseRouter,
-  // comment: commentsRouter,
+  feed: feedRouter,
 });
 
 // export type definition of API
