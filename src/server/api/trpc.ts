@@ -7,16 +7,16 @@
  * need to use are documented accordingly near the end.
  */
 
-import { initTRPC, TRPCError } from "@trpc/server";
+import { TRPCError, initTRPC } from "@trpc/server";
 import superjson from "superjson";
 import { ZodError } from "zod";
 
+import { and, eq } from "drizzle-orm";
+import type { TRPCPanelMeta } from "trpc-ui";
+import { z } from "zod";
 import { getServerAuthSession } from "~/server/auth";
 import { db } from "~/server/db";
-import { z } from "zod";
 import { usersToGroups } from "~/server/db/schema";
-import { eq, and } from "drizzle-orm";
-import type { TRPCPanelMeta } from "trpc-ui";
 
 /**
  * 1. CONTEXT

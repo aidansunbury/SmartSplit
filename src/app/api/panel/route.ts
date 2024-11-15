@@ -1,6 +1,6 @@
-import { appRouter } from "~/server/api/root";
-import { renderTrpcPanel } from "trpc-ui";
 import { NextResponse } from "next/server";
+import { renderTrpcPanel } from "trpc-ui";
+import { appRouter } from "~/server/api/root";
 
 export async function GET(req: Request) {
   return new NextResponse(

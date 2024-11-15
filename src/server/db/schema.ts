@@ -1,4 +1,4 @@
-import { desc, relations, sql } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
   check,
   index,
@@ -17,9 +17,6 @@ const createPrefixedUlid = (prefix: string) => {
   return `${prefix}_${ulid()}`;
 };
 
-//grp_01JBJDD04FVC2K7WKYTN3GNRD3
-// usr_01JBJDA0CRFH83S1EMX5HY57RF
-
 export const createTable = pgTableCreator((name) => `${name}`);
 
 export const users = createTable("user", {
@@ -27,7 +24,7 @@ export const users = createTable("user", {
     .notNull()
     .primaryKey()
     .$defaultFn(() => createPrefixedUlid("usr")),
-  name: varchar("name", { length: 255 }),
+  name: varchar("name", { length: 255 }).notNull(),
   email: varchar("email", { length: 255 }).notNull(),
   emailVerified: timestamp("email_verified", {
     mode: "date",

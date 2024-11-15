@@ -1,62 +1,109 @@
 import Link from "next/link";
 
 import { getServerAuthSession } from "~/server/auth";
-import { api, HydrateClient } from "~/trpc/server";
+import { HydrateClient } from "~/trpc/server";
+
+import { BarChart2, CreditCard, Receipt, Users } from "lucide-react";
+import { SignInButton } from "~/components/SigninButton";
+import { Button } from "~/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 
 export default async function Home() {
-  // const hello = await api.group.test2({ text: "first", text2: "second" });
   const session = await getServerAuthSession();
 
   return (
     <HydrateClient>
-      <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-[#2e026d] to-[#15162c] text-white">
-        <div className="container flex flex-col items-center justify-center gap-12 px-4 py-16">
-          <h1 className="text-5xl font-extrabold tracking-tight sm:text-[5rem]">
-            Create <span className="text-[hsl(280,100%,70%)]">T3</span> App
-          </h1>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-8">
-            <Link
-              className="flex max-w-xs flex-col gap-4 rounded-xl bg-white/10 p-4 hover:bg-white/20"
-              href="https://create.t3.gg/en/usage/first-steps"
-              target="_blank"
-            >
-              <h3 className="text-2xl font-bold">First Steps →</h3>
-              <div className="text-lg">
-                Just the basics - Everything you need to know to set up your
-                database and authentication.
-              </div>
-            </Link>
-            <Link
-              className="flex max-w-xs flex-col gap-4 rounded-xl bg-white/10 p-4 hover:bg-white/20"
-              href="https://create.t3.gg/en/introduction"
-              target="_blank"
-            >
-              <h3 className="text-2xl font-bold">Documentation →</h3>
-              <div className="text-lg">
-                Learn more about Create T3 App, the libraries it uses, and how
-                to deploy it.
-              </div>
-            </Link>
-          </div>
-          <div className="flex flex-col items-center gap-2">
-            <p className="text-2xl text-white">
-              {/* {hello ? hello.greeting : "Loading tRPC query..."} */}
-            </p>
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+        <header className="container mx-auto px-4 py-8">
+          <h1 className="font-bold text-4xl text-gray-900">Smart Split</h1>
+        </header>
 
-            <div className="flex flex-col items-center justify-center gap-4">
-              <p className="text-center text-2xl text-white">
-                {session && <span>Logged in as {session.user?.name}</span>}
-              </p>
-              <Link
-                href={session ? "/api/auth/signout" : "/api/auth/signin"}
-                className="rounded-full bg-white/10 px-10 py-3 font-semibold no-underline transition hover:bg-white/20"
-              >
-                {session ? "Sign out" : "Sign in"}
-              </Link>
+        <main className="container mx-auto px-4">
+          <section className="mb-16 text-center">
+            <h2 className="mb-4 font-semibold text-3xl text-gray-800">
+              Simplify Group Expenses
+            </h2>
+            <p className="mb-8 text-gray-600 text-xl">
+              Split bills, track expenses, and settle up with friends and
+              roommates effortlessly.
+            </p>
+            <div className="flex justify-center">
+              <div className="w-full max-w-md space-y-4">
+                {session ? (
+                  <Button asChild>
+                    <Link href="/dashboard">Go To Dashboard</Link>
+                  </Button>
+                ) : (
+                  <SignInButton redirect="/dashboard" />
+                )}
+              </div>
             </div>
-          </div>
-        </div>
-      </main>
+          </section>
+
+          <section className="grid grid-cols-2 gap-8">
+            <Card className="hover:-translate-y-1 transform bg-green-50 transition-all duration-300 ease-in-out hover:bg-green-100 hover:shadow-lg">
+              <CardHeader>
+                <CardTitle className="flex items-center text-green-700">
+                  <Users className="mr-2" />
+                  Create Groups
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-green-600">
+                  Easily organize expenses with friends, roommates, or for
+                  trips.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="hover:-translate-y-1 transform bg-blue-50 transition-all duration-300 ease-in-out hover:bg-blue-100 hover:shadow-lg">
+              <CardHeader>
+                <CardTitle className="flex items-center text-blue-700">
+                  <BarChart2 className="mr-2" />
+                  Track Balances
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-blue-600">
+                  See who owes what at a glance with real-time balance updates.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="hover:-translate-y-1 transform bg-purple-50 transition-all duration-300 ease-in-out hover:bg-purple-100 hover:shadow-lg">
+              <CardHeader>
+                <CardTitle className="flex items-center text-purple-700">
+                  <Receipt className="mr-2" />
+                  Organize Expenses
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-purple-600">
+                  Categorize and manage all your shared expenses in one place.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="hover:-translate-y-1 transform bg-orange-50 transition-all duration-300 ease-in-out hover:bg-orange-100 hover:shadow-lg">
+              <CardHeader>
+                <CardTitle className="flex items-center text-orange-700">
+                  <CreditCard className="mr-2" />
+                  Record Payments
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-orange-600">
+                  Keep track of settlements and payments within the app.
+                </p>
+              </CardContent>
+            </Card>
+          </section>
+        </main>
+
+        <footer className="container mx-auto mt-16 px-4 py-8 text-center text-gray-600">
+          Built as a final project for 61d.
+        </footer>
+      </div>
     </HydrateClient>
   );
 }

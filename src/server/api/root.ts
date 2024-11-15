@@ -1,9 +1,8 @@
-import { groupRouter } from "./routers/groups/groupRouter";
-import { paymentsRouter } from "./routers/payments/paymentsRouter";
+import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
 import { balancesRouter } from "./routers/balances/balancesRouter";
 import { expenseRouter } from "./routers/expenses/expenseRouter";
-import { commentsRouter } from "./routers/comments/commentsRouter";
-import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
+import { groupRouter } from "./routers/groups/groupRouter";
+import { paymentsRouter } from "./routers/payments/paymentsRouter";
 
 /**
  * This is the primary router for your server.

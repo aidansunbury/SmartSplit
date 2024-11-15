@@ -1,14 +1,14 @@
 import { z } from "zod";
 
-import {
-  createTRPCRouter,
-  protectedProcedure,
-  groupProcedure,
-} from "~/server/api/trpc";
-import { groups, usersToGroups } from "~/server/db/schema";
-import { safeInsertSchema } from "~/lib/safeInsertSchema";
 import { TRPCError } from "@trpc/server";
 import { eq } from "drizzle-orm";
+import { safeInsertSchema } from "~/lib/safeInsertSchema";
+import {
+  createTRPCRouter,
+  groupProcedure,
+  protectedProcedure,
+} from "~/server/api/trpc";
+import { groups, usersToGroups } from "~/server/db/schema";
 
 export const groupRouter = createTRPCRouter({
   create: protectedProcedure

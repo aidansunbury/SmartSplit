@@ -1,8 +1,8 @@
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
 import {
-  getServerSession,
   type DefaultSession,
   type NextAuthOptions,
+  getServerSession,
 } from "next-auth";
 import type { Adapter } from "next-auth/adapters";
 import Google from "next-auth/providers/google";
@@ -23,12 +23,15 @@ import {
  * @see https://next-auth.js.org/getting-started/typescript#module-augmentation
  */
 declare module "next-auth" {
-  interface Session extends DefaultSession {
+  interface Session {
     user: {
       id: string;
-      // ...other properties
+      name: string;
+      email: string;
+      image?: string;
+
       // role: UserRole;
-    } & DefaultSession["user"];
+    };
   }
 
   // interface User {
