@@ -108,6 +108,8 @@ export const expenses = createTable(
       .$defaultFn(() => createPrefixedUlid("exp")),
     // In cents
     amount: integer("amount").notNull(),
+    // Todo make the descriptions not nullable
+    description: text("description"),
     notes: text("notes"),
     // TODO may want to enforce that amount is positive, same with payments
     groupId: varchar("groupId", { length: 255 })
@@ -140,6 +142,7 @@ export const payments = createTable(
       .notNull()
       .primaryKey()
       .$defaultFn(() => createPrefixedUlid("pay")),
+    description: text("description"),
     notes: text("notes"),
     amount: integer("amount").notNull(),
     fromUserId: varchar("fromUserId", { length: 255 })
