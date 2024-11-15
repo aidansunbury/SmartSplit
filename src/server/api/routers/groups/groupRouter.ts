@@ -124,4 +124,18 @@ export const groupRouter = createTRPCRouter({
 
       return group;
     }),
+  list: protectedProcedure.query(async ({ ctx }) => {
+    const myGroups = await ctx.db.query.usersToGroups.findMany({
+      where: eq(usersToGroups.userId, ctx.session.user.id),
+      with: {
+        group: true,
+      },
+      columns: {
+        balance: true,
+        groupId: false,
+        userId: false,
+      },
+    });
+    return myGroups;
+  }),
 });

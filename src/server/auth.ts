@@ -1,9 +1,5 @@
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
-import {
-  type DefaultSession,
-  type NextAuthOptions,
-  getServerSession,
-} from "next-auth";
+import { type NextAuthOptions, getServerSession } from "next-auth";
 import type { Adapter } from "next-auth/adapters";
 import Google from "next-auth/providers/google";
 
