@@ -5,95 +5,76 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { api } from "~/trpc/react";
+
 import { useQueryState } from "nuqs";
 import Image from "next/image";
+import FeedSummary from "./FeedSummary";
+import { formatDate } from "~/lib/utils";
+import { Input } from "@/components/ui/input";
+import { Search } from "lucide-react";
+import { useState } from "react";
+import { FeedItem } from "./page";
 
-export function Feed() {
-  const [group, setGroup] = useQueryState("group");
-  const { data: feed, isLoading: feedIsLoading } =
-    api.feed.getGroupFeed.useQuery(
-      { groupId: group as string },
-      {
-        enabled: group !== null,
-      }
-    );
-  const { data: groupData, isLoading: groupIsLoading } = api.group.get.useQuery(
-    { groupId: group as string }
-  );
-  if (feedIsLoading) {
-    return <div>Loading...</div>;
-  }
-  if (!feed) {
-    return <div>No feed</div>;
-  }
-  if (groupIsLoading) {
-    return <div>Loading...</div>;
-  }
-  if (!groupData) {
-    return <div>Cannot find group data</div>;
-  }
-
-  // construct a dictionary of user ids to user names in the group
-  const groupMembers: Record<string, string> = {};
-  groupData.users.forEach((user) => {
-    groupMembers[user.user.id] = user.user.name;
-  });
-
-  // function that takes a feed createdAt timestamp and returns a formatted date
-  function formatDate(timestamp: number) {
-    return new Date(timestamp * 1000).toLocaleDateString();
-  }
-
+interface FeedProps {
+  filteredResult: FeedItem[];
+  groupMembers: Record<string, string>;
+}
+const Feed: React.FC<FeedProps> = ({ filteredResult, groupMembers }) => {
   return (
-    <Accordion type="multiple">
-      {feed.map((item) => (
-        <AccordionItem value={item.id} key={item.id}>
-          <AccordionTrigger>
-            <div className="flex flex-row justify-between items-center w-full">
-              <div className="flex flex-row space-x-3">
-                {"userId" in item ? (
-                  <Image
-                    src="/expense.png"
-                    alt="expense icon"
-                    width={50}
-                    height={50}
-                  />
-                ) : (
-                  <Image
-                    src="/payment.png"
-                    alt="payment icon"
-                    width={50}
-                    height={50}
-                  />
-                )}
-                <div className="flex flex-col items-start space-y-2">
-                  <div className="text-sm text-gray-500">
-                    {formatDate(item.createdAt)}
+    <div>
+      <Accordion type="multiple">
+        {filteredResult.map((item) => (
+          <AccordionItem value={item.id} key={item.id}>
+            <AccordionTrigger>
+              <div className="flex flex-row justify-between items-center w-full">
+                <div className="flex flex-row space-x-3">
+                  {"userId" in item ? (
+                    <Image
+                      src="/expense.png"
+                      alt="expense icon"
+                      width={50}
+                      height={50}
+                    />
+                  ) : (
+                    <Image
+                      src="/payment.png"
+                      alt="payment icon"
+                      width={50}
+                      height={50}
+                    />
+                  )}
+                  <div className="flex flex-col items-start space-y-2">
+                    <div className="text-sm text-gray-500">
+                      {formatDate(item.createdAt)}
+                    </div>
+                    <strong className="text-base text-gray-800">
+                      {item.description}
+                    </strong>
                   </div>
-                  <strong className="text-base text-gray-800">
-                    {item.description}
-                  </strong>
+                </div>
+
+                <div className="text-sm text-gray-500">
+                  {"userId" in item ? ( // Expense
+                    <>
+                      {groupMembers[item.userId]} paid ${item.amount}
+                    </>
+                  ) : "toUserId" in item ? ( // Payment
+                    <>
+                      {groupMembers[item.fromUserId]} paid ${item.amount} to{" "}
+                      {groupMembers[item.toUserId]}
+                    </>
+                  ) : null}
                 </div>
               </div>
-
-              <div className="text-sm text-gray-500">
-                {"userId" in item ? ( // must be an expense
-                  <>
-                    {groupMembers[item.userId]} paid ${item.amount}
-                  </>
-                ) : "toUserId" in item ? ( // must be a payment
-                  <>
-                    {groupMembers[item.fromUserId]} paid ${item.amount} to{" "}
-                    {groupMembers[item.toUserId]}
-                  </>
-                ) : null}
-              </div>
-            </div>
-          </AccordionTrigger>
-          <AccordionContent></AccordionContent>
-        </AccordionItem>
-      ))}
-    </Accordion>
+            </AccordionTrigger>
+            <AccordionContent>
+              <FeedSummary feedItem={item} groupMembers={groupMembers} />
+            </AccordionContent>
+          </AccordionItem>
+        ))}
+      </Accordion>
+    </div>
   );
-}
+};
+
+export default Feed;
