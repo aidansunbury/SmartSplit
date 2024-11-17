@@ -17,7 +17,7 @@ import { FeedItem } from "./page";
 
 interface FeedProps {
   filteredResult: FeedItem[];
-  groupMembers: Record<string, string>;
+  groupMembers: Record<string, Record<string, string>>;
 }
 const Feed: React.FC<FeedProps> = ({ filteredResult, groupMembers }) => {
   return (
@@ -56,12 +56,12 @@ const Feed: React.FC<FeedProps> = ({ filteredResult, groupMembers }) => {
                 <div className="text-sm text-gray-500">
                   {"userId" in item ? ( // Expense
                     <>
-                      {groupMembers[item.userId]} paid ${item.amount}
+                      {groupMembers[item.userId]?.name} paid ${item.amount}
                     </>
                   ) : "toUserId" in item ? ( // Payment
                     <>
-                      {groupMembers[item.fromUserId]} paid ${item.amount} to{" "}
-                      {groupMembers[item.toUserId]}
+                      {groupMembers[item.fromUserId]?.name} paid ${item.amount}{" "}
+                      to {groupMembers[item.toUserId]?.name}
                     </>
                   ) : null}
                 </div>

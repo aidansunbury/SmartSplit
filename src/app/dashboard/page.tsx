@@ -8,6 +8,7 @@ import { AddExpense } from "./AddExpense";
 import { AddPayment } from "./AddPayment";
 import { useState } from "react";
 import { api } from "~/trpc/react";
+import { profile } from "console";
 
 export type FeedItem =
   | {
@@ -59,9 +60,13 @@ export default function DashboardPage() {
   }
 
   // Construct a dictionary of user ids to user names in the group
-  const groupMembers: Record<string, string> = {};
+  const groupMembers: Record<string, Record<string, string>> = {};
   groupData.users.forEach((user) => {
-    groupMembers[user.user.id] = user.user.name;
+    groupMembers[user.user.id] = {
+      id: user.user.id,
+      name: user.user.name,
+      image: user.user.image || "",
+    };
   });
 
   // Filter feed items based on the search term (description and member names)
@@ -75,15 +80,17 @@ export default function DashboardPage() {
 
     const matchesUserName =
       "userId" in item &&
-      groupMembers[item.userId]?.toLowerCase().includes(lowercasedSearchTerm);
+      groupMembers[item.userId]?.name
+        ?.toLowerCase()
+        .includes(lowercasedSearchTerm);
 
     const matchesPaymentNames =
       "fromUserId" in item &&
       "toUserId" in item &&
-      (groupMembers[item.fromUserId]
+      (groupMembers[item.fromUserId]?.name
         ?.toLowerCase()
         .includes(lowercasedSearchTerm) ||
-        groupMembers[item.toUserId]
+        groupMembers[item.toUserId]?.name
           ?.toLowerCase()
           .includes(lowercasedSearchTerm));
 
