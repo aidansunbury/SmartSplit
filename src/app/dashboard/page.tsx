@@ -27,7 +27,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Right gutter */}
-      <div className="hidden w-48 p-4 lg:block">
+      <div className="w-56 p-4 shadow-xl">
         <div className="text-pretty text-gray-600">
           <Members />
         </div>
