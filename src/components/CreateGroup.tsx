@@ -10,8 +10,8 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { CirclePlus } from "lucide-react";
 import { SidebarMenuButton } from "@/components/ui/sidebar";
+import { CirclePlus } from "lucide-react";
 
 export function CreateGroup() {
   return (

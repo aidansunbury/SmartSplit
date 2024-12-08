@@ -1,9 +1,9 @@
 import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
 import { balancesRouter } from "./routers/balances/balancesRouter";
 import { expenseRouter } from "./routers/expenses/expenseRouter";
+import { feedRouter } from "./routers/feed/feedRouter";
 import { groupRouter } from "./routers/groups/groupRouter";
 import { paymentsRouter } from "./routers/payments/paymentsRouter";
-import { feedRouter } from "./routers/feed/feedRouter";
 
 /**
  * This is the primary router for your server.

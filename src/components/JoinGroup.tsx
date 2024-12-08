@@ -10,8 +10,8 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { UsersRound } from "lucide-react";
 import { SidebarMenuButton } from "@/components/ui/sidebar";
+import { UsersRound } from "lucide-react";
 
 export function JoinGroup() {
   return (

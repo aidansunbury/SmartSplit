@@ -1,8 +1,8 @@
 // @ts-nocheck Prevent type errors for array access out of bounds
-import { desc, eq, type InferSelectModel } from "drizzle-orm";
+import { type InferSelectModel, desc, eq } from "drizzle-orm";
 
 import { createTRPCRouter, groupProcedure } from "~/server/api/trpc";
-import { payments, expenses } from "~/server/db/schema";
+import { expenses, payments } from "~/server/db/schema";
 
 export const feedRouter = createTRPCRouter({
   getGroupFeed: groupProcedure.query(async ({ input, ctx }) => {
