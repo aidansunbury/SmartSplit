@@ -5,15 +5,10 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-
-import { useQueryState } from "nuqs";
 import Image from "next/image";
-import FeedSummary from "./FeedSummary";
 import { formatDate } from "~/lib/utils";
-import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
-import { useState } from "react";
-import { FeedItem } from "./page";
+import FeedSummary from "./FeedSummary";
+import type { FeedItem } from "./page";
 
 interface FeedProps {
   filteredResult: FeedItem[];
@@ -26,7 +21,7 @@ const Feed: React.FC<FeedProps> = ({ filteredResult, groupMembers }) => {
         {filteredResult.map((item) => (
           <AccordionItem value={item.id} key={item.id}>
             <AccordionTrigger>
-              <div className="flex flex-row justify-between items-center w-full">
+              <div className="flex w-full flex-row items-center justify-between">
                 <div className="flex flex-row space-x-3">
                   {"userId" in item ? (
                     <Image
@@ -44,7 +39,7 @@ const Feed: React.FC<FeedProps> = ({ filteredResult, groupMembers }) => {
                     />
                   )}
                   <div className="flex flex-col items-start space-y-2">
-                    <div className="text-sm text-gray-500">
+                    <div className="text-gray-500 text-sm">
                       {formatDate(item.createdAt)}
                     </div>
                     <strong className="text-base text-gray-800">
@@ -53,7 +48,7 @@ const Feed: React.FC<FeedProps> = ({ filteredResult, groupMembers }) => {
                   </div>
                 </div>
 
-                <div className="text-sm text-gray-500">
+                <div className="text-gray-500 text-sm">
                   {"userId" in item ? ( // Expense
                     <>
                       {groupMembers[item.userId]?.name} paid ${item.amount}

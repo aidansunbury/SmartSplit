@@ -1,8 +1,7 @@
-import React from "react";
-import { formatDate } from "~/lib/utils";
-import { FeedItem } from "./page";
 import { Separator } from "@/components/ui/separator";
-import { is } from "drizzle-orm";
+import type React from "react";
+import { formatDate } from "~/lib/utils";
+import type { FeedItem } from "./page";
 
 // Define the props type, including feedItem and groupMembers
 interface FeedSummaryProps {
@@ -25,7 +24,7 @@ const FeedSummary: React.FC<FeedSummaryProps> = ({
     payerObj = groupMembers[feedItem.userId];
     isExpense = true;
     evenSplit = Number(
-      (feedItem.amount / Object.keys(groupMembers).length).toFixed(2)
+      (feedItem.amount / Object.keys(groupMembers).length).toFixed(2),
     );
   } else if ("fromUserId" in feedItem && "toUserId" in feedItem) {
     payerObj = groupMembers[feedItem.fromUserId];
@@ -36,22 +35,22 @@ const FeedSummary: React.FC<FeedSummaryProps> = ({
   return (
     <div className="flex flex-col">
       <div className="flex flex-col items-end self-end">
-        <div className="text-lg font-semibold text-black">
+        <div className="font-semibold text-black text-lg">
           {feedItem.description || "No description available"}
         </div>
-        <div className="text-2xl font-bold text-black">${feedItem.amount}</div>
-        <div className="text-sm text-gray-500">
+        <div className="font-bold text-2xl text-black">${feedItem.amount}</div>
+        <div className="text-gray-500 text-sm">
           Added by {payerObj?.name} on {formatDate(feedItem.createdAt)}
         </div>
       </div>
       <Separator />
       <div className="mt-2 self-center">
         {isExpense ? (
-          <div className="flex flex-col items-start text-black space-y-2">
+          <div className="flex flex-col items-start space-y-2 text-black">
             <div className="flex flex-row items-center justify-center space-x-2">
               <img
                 src={payerObj?.image}
-                alt="payer profile image"
+                alt="payer profile"
                 width={40}
                 height={40}
                 className="rounded-full"
@@ -71,7 +70,7 @@ const FeedSummary: React.FC<FeedSummaryProps> = ({
                     >
                       <img
                         src={groupMembers[userId]?.image}
-                        alt="member profile image"
+                        alt="member profile"
                         width={40}
                         height={40}
                         className="rounded-full"
@@ -81,15 +80,15 @@ const FeedSummary: React.FC<FeedSummaryProps> = ({
                         <strong>${evenSplit}</strong>
                       </div>
                     </div>
-                  )
+                  ),
               )}
           </div>
         ) : (
-          <div className="flex flex-col text-sm text-black items-start space-y-2">
+          <div className="flex flex-col items-start space-y-2 text-black text-sm">
             <div className="flex flex-row items-center justify-center space-x-2">
               <img
                 src={payerObj?.image}
-                alt="payer profile image"
+                alt="payer profile"
                 width={40}
                 height={40}
                 className="rounded-full"
@@ -102,7 +101,7 @@ const FeedSummary: React.FC<FeedSummaryProps> = ({
             <div className="flex flex-row items-center justify-center space-x-2">
               <img
                 src={receiverObj?.image}
-                alt="receiver profile image"
+                alt="receiver profile"
                 width={40}
                 height={40}
                 className="rounded-full"
