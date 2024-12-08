@@ -166,7 +166,7 @@ const CommandEmpty = forwardRef<
 
 CommandEmpty.displayName = 'CommandEmpty';
 
-const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorProps>(
+export const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorProps>(
   (
     {
       value,
@@ -605,4 +605,4 @@ const MultipleSelector = React.forwardRef<MultipleSelectorRef, MultipleSelectorP
 );
 
 MultipleSelector.displayName = 'MultipleSelector';
-export default MultipleSelector;
+

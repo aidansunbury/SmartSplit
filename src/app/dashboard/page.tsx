@@ -45,17 +45,15 @@ export default function DashboardPage() {
   const { data: groupData, isLoading: groupIsLoading } = api.group.get.useQuery(
     { groupId: group as string },
   );
-  if (feedIsLoading) {
-    return <div>Loading...</div>;
-  }
-  if (!feed) {
-    return <div>No feed</div>;
-  }
-  if (groupIsLoading) {
+
+  if (feedIsLoading || groupIsLoading) {
     return <div>Loading...</div>;
   }
   if (!groupData) {
-    return <div>Cannot find group data</div>;
+    return <div>Group does not exist or you are not added to this group</div>;
+  }
+  if (!feed) {
+    return <div>No feed</div>;
   }
 
   // Construct a dictionary of user ids to user names in the group

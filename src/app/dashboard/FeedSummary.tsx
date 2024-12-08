@@ -50,7 +50,7 @@ const FeedSummary: React.FC<FeedSummaryProps> = ({
             <div className="flex flex-row items-center justify-center space-x-2">
               <img
                 src={payerObj?.image}
-                alt="payer profile image"
+                alt="payer profile"
                 width={40}
                 height={40}
                 className="rounded-full"
@@ -70,7 +70,7 @@ const FeedSummary: React.FC<FeedSummaryProps> = ({
                     >
                       <img
                         src={groupMembers[userId]?.image}
-                        alt="member profile image"
+                        alt="member profile"
                         width={40}
                         height={40}
                         className="rounded-full"
@@ -88,7 +88,7 @@ const FeedSummary: React.FC<FeedSummaryProps> = ({
             <div className="flex flex-row items-center justify-center space-x-2">
               <img
                 src={payerObj?.image}
-                alt="payer profile image"
+                alt="payer profile"
                 width={40}
                 height={40}
                 className="rounded-full"
@@ -101,7 +101,7 @@ const FeedSummary: React.FC<FeedSummaryProps> = ({
             <div className="flex flex-row items-center justify-center space-x-2">
               <img
                 src={receiverObj?.image}
-                alt="receiver profile image"
+                alt="receiver profile"
                 width={40}
                 height={40}
                 className="rounded-full"
