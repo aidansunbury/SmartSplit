@@ -98,7 +98,7 @@ export default function DashboardPage() {
     <div className="flex min-h-screen justify-center overflow-hidden">
       {/* Main content area */}
       <div className="w-full max-w-[600px] p-4">
-        <div className="text-center text-gray-600">
+        <div className="text-center">
           <SearchBar searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
           <div>
             <AddExpense />
@@ -114,9 +114,7 @@ export default function DashboardPage() {
 
       {/* Right gutter */}
       <div className="w-56 p-4 shadow-xl">
-        <div className="text-pretty text-gray-600">
-          <Members />
-        </div>
+        <Members />
       </div>
     </div>
   );

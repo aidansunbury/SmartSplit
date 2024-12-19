@@ -4,30 +4,29 @@ import { AvatarImage } from "@radix-ui/react-avatar";
 import { useQueryState } from "nuqs";
 import { Avatar } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
+import { formatCurrency } from "~/lib/currencyFormat";
 import { api } from "~/trpc/react";
 
 export function Members() {
   const [group] = useQueryState("group");
-  const { data: members, isLoading } = api.group.get.useQuery(
+  const { data: groupWithMembers, isLoading } = api.group.get.useQuery(
     { groupId: group as string },
     {
       enabled: group !== null,
     },
   );
-  // Dummy Data
-  // const members = dummyMembers;
-  // const isLoading = false;
+
   if (isLoading) {
     return <div>Loading...</div>;
   }
-  if (!members) {
+  if (!groupWithMembers) {
     return <div>No feed</div>;
   }
 
   return (
     <div className="flex flex-col space-y-4">
-      <h1 className="font-bold text-l">Group Members</h1>
-      {members.users.map((user) => {
+      <h1 className="font-bold text-l">{groupWithMembers.name}</h1>
+      {groupWithMembers.users.map((user) => {
         const isNegative = user.balance < 0;
 
         return (
@@ -36,7 +35,7 @@ export function Members() {
             key={user.user.id}
           >
             <Avatar>
-              <AvatarImage src={user.user.image} />
+              <AvatarImage src={user.user.image ?? undefined} />
             </Avatar>
             <div className="flex flex-col">
               <h2 className="font-medium">{user.user.name}</h2>
@@ -47,7 +46,7 @@ export function Members() {
                   {isNegative ? "owes" : "gets back"}
                 </span>
                 <span className="ml-1 font-bold text-lg">
-                  ${Math.abs(user.balance)}
+                  {formatCurrency(user.balance)}
                 </span>
               </div>
             </div>
@@ -61,44 +60,3 @@ export function Members() {
     </div>
   );
 }
-
-const dummyMembers = {
-  id: "group1",
-  name: "Book Club",
-  description: "Epic book club",
-  settledSince: 2020,
-  ownerId: "user3",
-  joinCode: "BOOK5678",
-  users: [
-    {
-      balance: 100.0,
-      user: {
-        id: "user3",
-        name: "Carol Williams",
-        email: "carol.williams@example.com",
-        emailVerified: new Date("2024-01-25"),
-        image: "https://picsum.photos/200",
-      },
-    },
-    {
-      balance: -15.25,
-      user: {
-        id: "user4",
-        name: "David Brown",
-        email: "david.brown@example.com",
-        emailVerified: null,
-        image: "https://picsum.photos/200",
-      },
-    },
-    {
-      balance: 5.0,
-      user: {
-        id: "user5",
-        name: "Eve Taylor",
-        email: "eve.taylor@example.com",
-        emailVerified: new Date("2024-10-10"),
-        image: "https://picsum.photos/200",
-      },
-    },
-  ],
-};

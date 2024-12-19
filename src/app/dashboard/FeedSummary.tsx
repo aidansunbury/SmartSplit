@@ -1,5 +1,6 @@
 import { Separator } from "@/components/ui/separator";
 import type React from "react";
+import { formatCurrency } from "~/lib/currencyFormat";
 import { formatDate } from "~/lib/utils";
 import type { FeedItem } from "./page";
 
@@ -35,18 +36,20 @@ const FeedSummary: React.FC<FeedSummaryProps> = ({
   return (
     <div className="flex flex-col">
       <div className="flex flex-col items-end self-end">
-        <div className="font-semibold text-black text-lg">
+        <div className="font-semibold text-lg">
           {feedItem.description || "No description available"}
         </div>
-        <div className="font-bold text-2xl text-black">${feedItem.amount}</div>
-        <div className="text-gray-500 text-sm">
+        <div className="font-bold text-2xl ">
+          {formatCurrency(feedItem.amount)}
+        </div>
+        <div className=" text-sm">
           Added by {payerObj?.name} on {formatDate(feedItem.createdAt)}
         </div>
       </div>
       <Separator />
       <div className="mt-2 self-center">
         {isExpense ? (
-          <div className="flex flex-col items-start space-y-2 text-black">
+          <div className="flex flex-col items-start space-y-2">
             <div className="flex flex-row items-center justify-center space-x-2">
               <img
                 src={payerObj?.image}
@@ -57,7 +60,7 @@ const FeedSummary: React.FC<FeedSummaryProps> = ({
               />
               <div>
                 <strong>{payerObj?.name} </strong> paid{" "}
-                <strong>${feedItem.amount}</strong>
+                <strong>{formatCurrency(feedItem.amount)}</strong>
               </div>
             </div>
             {groupMembers &&
@@ -77,14 +80,14 @@ const FeedSummary: React.FC<FeedSummaryProps> = ({
                       />
                       <div>
                         <strong>{groupMembers[userId]?.name} </strong> owes{" "}
-                        <strong>${evenSplit}</strong>
+                        <strong>{formatCurrency(evenSplit)}</strong>
                       </div>
                     </div>
                   ),
               )}
           </div>
         ) : (
-          <div className="flex flex-col items-start space-y-2 text-black text-sm">
+          <div className="flex flex-col items-start space-y-2 text-sm">
             <div className="flex flex-row items-center justify-center space-x-2">
               <img
                 src={payerObj?.image}
@@ -108,7 +111,7 @@ const FeedSummary: React.FC<FeedSummaryProps> = ({
               />
               <div>
                 <strong>{receiverObj?.name} </strong> received{" "}
-                <strong>${feedItem.amount}</strong>
+                <strong>{formatCurrency(feedItem.amount)}</strong>
               </div>
             </div>
           </div>

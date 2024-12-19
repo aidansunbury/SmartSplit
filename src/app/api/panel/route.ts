@@ -7,6 +7,9 @@ export async function GET(req: Request) {
     renderTrpcPanel(appRouter, {
       url: "/api/trpc",
       transformer: "superjson",
+      meta: {
+        title: "Smart Split",
+      },
     }),
     {
       status: 200,

@@ -6,6 +6,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import Image from "next/image";
+import { formatCurrency } from "~/lib/currencyFormat";
 import { formatDate } from "~/lib/utils";
 import FeedSummary from "./FeedSummary";
 import type { FeedItem } from "./page";
@@ -42,21 +43,21 @@ const Feed: React.FC<FeedProps> = ({ filteredResult, groupMembers }) => {
                     <div className="text-gray-500 text-sm">
                       {formatDate(item.createdAt)}
                     </div>
-                    <strong className="text-base text-gray-800">
-                      {item.description}
-                    </strong>
+                    <strong className="text-base">{item.description}</strong>
                   </div>
                 </div>
 
-                <div className="text-gray-500 text-sm">
+                <div className=" text-sm">
                   {"userId" in item ? ( // Expense
                     <>
-                      {groupMembers[item.userId]?.name} paid ${item.amount}
+                      {groupMembers[item.userId]?.name} paid{" "}
+                      {formatCurrency(item.amount)}
                     </>
                   ) : "toUserId" in item ? ( // Payment
                     <>
-                      {groupMembers[item.fromUserId]?.name} paid ${item.amount}{" "}
-                      to {groupMembers[item.toUserId]?.name}
+                      {groupMembers[item.fromUserId]?.name} paid{" "}
+                      {formatCurrency(item.amount)} to{" "}
+                      {groupMembers[item.toUserId]?.name}
                     </>
                   ) : null}
                 </div>
