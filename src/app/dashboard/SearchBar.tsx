@@ -14,7 +14,7 @@ const SearchBar = ({
         <Input
           id="input-26"
           className="peer ps-9 pe-1"
-          placeholder="Search by title or member name..."
+          placeholder="Search in description or notes"
           type="search"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}

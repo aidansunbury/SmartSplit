@@ -1,7 +1,7 @@
 "use client";
 import { useQueryState } from "nuqs";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useToast } from "~/hooks/use-toast";
 import { api } from "~/trpc/react";
 import { AddExpense } from "./AddExpense";
@@ -9,6 +9,8 @@ import { AddPayment } from "./AddPayment";
 import Feed from "./Feed";
 import { Members } from "./Members";
 import SearchBar from "./SearchBar";
+import fuzzysort from "fuzzysort";
+import { useDebounce } from "@uidotdev/usehooks";
 
 export type FeedItem =
   | {
@@ -37,6 +39,19 @@ export default function DashboardPage() {
   const [join, setJoin] = useQueryState("join");
   const { toast } = useToast();
 
+  const [searchTerm, setSearchTerm] = useState(""); // State for search term
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
+
+  const { data: feed, isLoading: feedIsLoading } =
+    api.feed.getGroupFeed.useQuery(
+      { groupId: group as string },
+      {
+        enabled: group !== null,
+      },
+    );
+  const { data: groupData, isLoading: groupIsLoading } = api.group.get.useQuery(
+    { groupId: group as string },
+  );
   if (join === "success") {
     toast({
       title: "Joined group successfully",
@@ -54,18 +69,18 @@ export default function DashboardPage() {
     setJoin(null);
   }
 
-  const [searchTerm, setSearchTerm] = useState(""); // State for search term
-
-  const { data: feed, isLoading: feedIsLoading } =
-    api.feed.getGroupFeed.useQuery(
-      { groupId: group as string },
-      {
-        enabled: group !== null,
-      },
-    );
-  const { data: groupData, isLoading: groupIsLoading } = api.group.get.useQuery(
-    { groupId: group as string },
-  );
+  const filteredFeedItems = useMemo(() => {
+    if (!feed) {
+      return [];
+    }
+    return debouncedSearchTerm.length > 0
+      ? fuzzysort
+          .go(debouncedSearchTerm, feed, {
+            keys: ["description", "notes"],
+          })
+          .map((result) => result.obj)
+      : feed;
+  }, [feed, debouncedSearchTerm]);
 
   if (feedIsLoading || groupIsLoading) {
     return <div>Loading...</div>;
@@ -77,6 +92,7 @@ export default function DashboardPage() {
     return <div>No feed</div>;
   }
 
+  // TODO this should be moved to the server
   // Construct a dictionary of user ids to user names in the group
   const groupMembers: Record<string, Record<string, string>> = {};
   groupData.users.forEach((user) => {
@@ -87,44 +103,15 @@ export default function DashboardPage() {
     };
   });
 
-  // Filter feed items based on the search term (description and member names)
-  const filteredFeedItems = feed.filter((item) => {
-    const lowercasedSearchTerm = searchTerm.toLowerCase();
-
-    // Match description or any user-related fields (userId, fromUserId, toUserId)
-    const matchesDescription = item.description
-      ?.toLowerCase()
-      .includes(lowercasedSearchTerm);
-
-    const matchesUserName =
-      "userId" in item &&
-      groupMembers[item.userId]?.name
-        ?.toLowerCase()
-        .includes(lowercasedSearchTerm);
-
-    const matchesPaymentNames =
-      "fromUserId" in item &&
-      "toUserId" in item &&
-      (groupMembers[item.fromUserId]?.name
-        ?.toLowerCase()
-        .includes(lowercasedSearchTerm) ||
-        groupMembers[item.toUserId]?.name
-          ?.toLowerCase()
-          .includes(lowercasedSearchTerm));
-
-    return matchesDescription || matchesUserName || matchesPaymentNames;
-  });
-
   return (
     <div>
-      <div />
       <h1 className="font-bold text-2xl xl:pl-16">{groupData.name}</h1>
       <div className="flex min-h-screen flex-col-reverse justify-center overflow-hidden lg:flex-row">
         {/* Main content area */}
         <div className="w-full max-w-[600px] p-4">
           <div className="text-center">
             <SearchBar searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
-            <div>
+            <div className="space-x-2">
               <AddExpense />
               <AddPayment />
               {/* //Todo Invite Group member */}

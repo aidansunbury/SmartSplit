@@ -102,7 +102,7 @@ export function AddExpense() {
       }}
     >
       <DialogTrigger asChild>
-        <Button variant={"ghost"}>
+        <Button variant={"default"}>
           <CircleDollarSign size={24} />
           Add Expense
         </Button>

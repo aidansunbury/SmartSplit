@@ -123,7 +123,7 @@ export function AddPayment() {
       }}
     >
       <DialogTrigger asChild>
-        <Button variant={"ghost"}>
+        <Button variant={"default"}>
           <HandCoins size={24} />
           Add Payment
         </Button>

@@ -14,6 +14,7 @@ import { JoinGroup } from "./JoinGroup";
 
 export const SidebarGroups = () => {
   const { data: groups } = api.group.list.useQuery();
+  const utils = api.useUtils();
   const [group, setGroup] = useQueryState("group");
   if (groups && groups.length > 0 && group === null) {
     //@ts-ignore - we know it's not null
@@ -30,6 +31,9 @@ export const SidebarGroups = () => {
               <SidebarMenuButton
                 isActive={item.group.id === group}
                 onClick={() => setGroup(item.group.id)}
+                onMouseEnter={() =>
+                  utils.group.get.prefetch({ groupId: item.group.id })
+                }
               >
                 {item.group.name}
               </SidebarMenuButton>
