@@ -2,6 +2,7 @@
 import { useQueryState } from "nuqs";
 
 import { useState } from "react";
+import { useToast } from "~/hooks/use-toast";
 import { api } from "~/trpc/react";
 import { AddExpense } from "./AddExpense";
 import { AddPayment } from "./AddPayment";
@@ -32,7 +33,27 @@ export type FeedItem =
 
 // If the user is not a part of any groups, CTA to create or join
 export default function DashboardPage() {
-  const [group, setGroup] = useQueryState("group");
+  const [group, _setGroup] = useQueryState("group");
+  const [join, setJoin] = useQueryState("join");
+  const { toast } = useToast();
+
+  if (join === "success") {
+    toast({
+      title: "Joined group successfully",
+      variant: "default",
+    });
+    setJoin(null);
+  }
+
+  if (join === "error") {
+    toast({
+      title: "Failed to join group",
+      description: "The join code may have changed",
+      variant: "destructive",
+    });
+    setJoin(null);
+  }
+
   const [searchTerm, setSearchTerm] = useState(""); // State for search term
 
   const { data: feed, isLoading: feedIsLoading } =
@@ -95,26 +116,30 @@ export default function DashboardPage() {
   });
 
   return (
-    <div className="flex min-h-screen justify-center overflow-hidden">
-      {/* Main content area */}
-      <div className="w-full max-w-[600px] p-4">
-        <div className="text-center">
-          <SearchBar searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
-          <div>
-            <AddExpense />
-            <AddPayment />
-            {/* //Todo Invite Group member */}
+    <div>
+      <div />
+      <h1 className="font-bold text-2xl xl:pl-16">{groupData.name}</h1>
+      <div className="flex min-h-screen flex-col-reverse justify-center overflow-hidden lg:flex-row">
+        {/* Main content area */}
+        <div className="w-full max-w-[600px] p-4">
+          <div className="text-center">
+            <SearchBar searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
+            <div>
+              <AddExpense />
+              <AddPayment />
+              {/* //Todo Invite Group member */}
+            </div>
+            <Feed
+              filteredResult={filteredFeedItems}
+              groupMembers={groupMembers}
+            />
           </div>
-          <Feed
-            filteredResult={filteredFeedItems}
-            groupMembers={groupMembers}
-          />
         </div>
-      </div>
 
-      {/* Right gutter */}
-      <div className="w-56 p-4 shadow-xl">
-        <Members />
+        {/* Right gutter */}
+        <div className="w-56 p-4 shadow-xl lg:h-auto lg:w-1/4 lg:flex-none">
+          <Members />
+        </div>
       </div>
     </div>
   );

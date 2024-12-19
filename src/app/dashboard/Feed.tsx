@@ -5,10 +5,10 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import Image from "next/image";
+import { CircleDollarSign, HandCoins } from "lucide-react";
 import { formatCurrency } from "~/lib/currencyFormat";
 import { formatDate } from "~/lib/utils";
-import FeedSummary from "./FeedSummary";
+import FeedSummary from "./FeedItem";
 import type { FeedItem } from "./page";
 
 interface FeedProps {
@@ -25,29 +25,21 @@ const Feed: React.FC<FeedProps> = ({ filteredResult, groupMembers }) => {
               <div className="flex w-full flex-row items-center justify-between">
                 <div className="flex flex-row space-x-3">
                   {"userId" in item ? (
-                    <Image
-                      src="/expense.png"
-                      alt="expense icon"
-                      width={50}
-                      height={50}
-                    />
+                    <CircleDollarSign size={40} />
                   ) : (
-                    <Image
-                      src="/payment.png"
-                      alt="payment icon"
-                      width={50}
-                      height={50}
-                    />
+                    <HandCoins size={40} />
                   )}
                   <div className="flex flex-col items-start space-y-2">
                     <div className="text-gray-500 text-sm">
                       {formatDate(item.createdAt)}
                     </div>
-                    <strong className="text-base">{item.description}</strong>
+                    <span className="text-lg font-semibold text-left">
+                      {item.description}
+                    </span>
                   </div>
                 </div>
 
-                <div className=" text-sm">
+                <span className="text-sm text-right">
                   {"userId" in item ? ( // Expense
                     <>
                       {groupMembers[item.userId]?.name} paid{" "}
@@ -60,7 +52,7 @@ const Feed: React.FC<FeedProps> = ({ filteredResult, groupMembers }) => {
                       {groupMembers[item.toUserId]?.name}
                     </>
                   ) : null}
-                </div>
+                </span>
               </div>
             </AccordionTrigger>
             <AccordionContent>

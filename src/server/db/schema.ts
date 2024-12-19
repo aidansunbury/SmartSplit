@@ -106,12 +106,10 @@ export const expenses = createTable(
       .notNull()
       .primaryKey()
       .$defaultFn(() => createPrefixedUlid("exp")),
-    // In cents
+    // Positive integer in cents
     amount: integer("amount").notNull(),
-    // Todo make the descriptions not nullable
-    description: text("description"),
+    description: text("description").notNull(),
     notes: text("notes"),
-    // TODO may want to enforce that amount is positive, same with payments
     groupId: varchar("groupId", { length: 255 })
       .notNull()
       .references(() => groups.id),
@@ -126,6 +124,10 @@ export const expenses = createTable(
   (t) => ({
     groupIdx: index("expenses_group_idx").on(t.groupId),
     createdAtIdx: index("expenses_created_at_idx").on(t.createdAt),
+    positiveAmountCheck: check(
+      "expenses_positive_amount_check",
+      sql`${t.amount} > 0`,
+    ),
   }),
 );
 
@@ -142,7 +144,7 @@ export const payments = createTable(
       .notNull()
       .primaryKey()
       .$defaultFn(() => createPrefixedUlid("pay")),
-    description: text("description"),
+    description: text("description").notNull(),
     notes: text("notes"),
     amount: integer("amount").notNull(),
     fromUserId: varchar("fromUserId", { length: 255 })
@@ -161,6 +163,10 @@ export const payments = createTable(
   (t) => ({
     groupIdx: index("payments_group_idx").on(t.groupId),
     createdAtIdx: index("payments_created_at_idx").on(t.createdAt),
+    positiveAmountCheck: check(
+      "payments_positive_amount_check",
+      sql`${t.amount} > 0`,
+    ),
   }),
 );
 
