@@ -1,6 +1,11 @@
+"use client";
+
 import type React from "react";
 import { formatCurrency } from "~/lib/currencyFormat";
 import type { FeedItem } from "./page";
+import { api } from "~/trpc/react";
+import { PencilLine, Trash2 } from "lucide-react";
+import { DeleteFeedItemDialog } from "./DeleteFeedItemDialog";
 
 // Define the props type, including feedItem and groupMembers
 interface FeedSummaryProps {
@@ -35,9 +40,11 @@ const FeedSummary: React.FC<FeedSummaryProps> = ({
   feedItem,
   groupMembers,
 }) => {
+  const { data: me } = api.me.useQuery();
   // Determine if the feed item is an expense or payment
   let isExpense = true;
   let evenSplit = 0;
+  let isOwner = false;
 
   // get the payer and receiver in this expense/payment
   let payerObj: Record<string, string> | undefined;
@@ -48,10 +55,12 @@ const FeedSummary: React.FC<FeedSummaryProps> = ({
     evenSplit = Number(
       (feedItem.amount / Object.keys(groupMembers).length).toFixed(2),
     );
+    isOwner = feedItem.userId === me?.id;
   } else if ("fromUserId" in feedItem && "toUserId" in feedItem) {
     payerObj = groupMembers[feedItem.fromUserId];
     receiverObj = groupMembers[feedItem.toUserId];
     isExpense = false;
+    isOwner = feedItem.fromUserId === me?.id;
   }
 
   function renderPayment() {
@@ -100,7 +109,15 @@ const FeedSummary: React.FC<FeedSummaryProps> = ({
 
   return (
     <div className="flex flex-col lg:flex-row-reverse">
-      <div className="lg:w-1/2">{feedItem.notes}</div>
+      <div className="lg:w-1/2 border relative">
+        {feedItem.notes}{" "}
+        {isOwner && (
+          <div className="flex flex-row space-x-2 absolute right-2 top-2">
+            <DeleteFeedItemDialog />
+            <PencilLine size={20} />
+          </div>
+        )}
+      </div>
       <div className="flex flex-col space-y-1 lg:w-1/2">{renderPayment()}</div>
     </div>
   );

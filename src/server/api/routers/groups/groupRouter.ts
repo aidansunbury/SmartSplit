@@ -1,14 +1,14 @@
 import { z } from "zod";
 
 import { TRPCError } from "@trpc/server";
-import { eq } from "drizzle-orm";
+import { eq, type InferSelectModel } from "drizzle-orm";
 import { safeInsertSchema } from "~/lib/safeInsertSchema";
 import {
   createTRPCRouter,
   groupProcedure,
   protectedProcedure,
 } from "~/server/api/trpc";
-import { groups, usersToGroups } from "~/server/db/schema";
+import { groups, usersToGroups, users } from "~/server/db/schema";
 
 export const groupRouter = createTRPCRouter({
   create: protectedProcedure
@@ -96,7 +96,8 @@ export const groupRouter = createTRPCRouter({
     }),
   get: groupProcedure
     .meta({
-      description: "Get a group by ID, including all users in the group",
+      description:
+        "Get a group by ID, including all users in the group. \n\n Finding the user that corresponds to a given Id is commonly needed on the frontend, so we include a userMap to easily achieve this and to ensure that the operation is not needlessly recalculated.",
     })
     .query(async ({ input, ctx }) => {
       const group = await ctx.db.query.groups.findFirst({
@@ -114,7 +115,10 @@ export const groupRouter = createTRPCRouter({
           },
         },
       });
-
+      const userMap = new Map<string, InferSelectModel<typeof users>>();
+      group?.users.forEach((user) => {
+        userMap.set(user.user.id, user.user);
+      });
       if (!group) {
         throw new TRPCError({
           code: "NOT_FOUND",
@@ -122,20 +126,41 @@ export const groupRouter = createTRPCRouter({
         });
       }
 
-      return group;
+      return { ...group, userMap };
     }),
-  list: protectedProcedure.query(async ({ ctx }) => {
-    const myGroups = await ctx.db.query.usersToGroups.findMany({
-      where: eq(usersToGroups.userId, ctx.session.user.id),
-      with: {
-        group: true,
-      },
-      columns: {
-        balance: true,
-        groupId: false,
-        userId: false,
-      },
-    });
-    return myGroups;
+  list: protectedProcedure
+    .meta({
+      description: "List all groups the current user is a member of",
+    })
+    .query(async ({ ctx }) => {
+      const myGroups = await ctx.db.query.usersToGroups.findMany({
+        where: eq(usersToGroups.userId, ctx.session.user.id),
+        with: {
+          group: true,
+        },
+        columns: {
+          balance: true,
+          groupId: false,
+          userId: false,
+        },
+        orderBy: (group, { asc }) => [asc(group.groupId)], // Ensure consistent ordering
+      });
+      return myGroups;
+    }),
+  refreshJoinCode: groupProcedure.mutation(async ({ ctx }) => {
+    const newCode = crypto.randomUUID();
+    const [group] = await ctx.db
+      .update(groups)
+      .set({
+        joinCode: newCode,
+      })
+      .returning();
+    if (!group) {
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Failed to refresh join code",
+      });
+    }
+    return group;
   }),
 });

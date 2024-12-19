@@ -9,13 +9,13 @@ import { CircleDollarSign, HandCoins } from "lucide-react";
 import { formatCurrency } from "~/lib/currencyFormat";
 import { formatDate } from "~/lib/utils";
 import FeedSummary from "./FeedItem";
-import type { FeedItem } from "./page";
+import type { FeedItem } from "../../page";
 
 interface FeedProps {
   filteredResult: FeedItem[];
   groupMembers: Record<string, Record<string, string>>;
 }
-const Feed: React.FC<FeedProps> = ({ filteredResult, groupMembers }) => {
+export const Feed: React.FC<FeedProps> = ({ filteredResult, groupMembers }) => {
   return (
     <div>
       <Accordion type="multiple">
@@ -64,5 +64,3 @@ const Feed: React.FC<FeedProps> = ({ filteredResult, groupMembers }) => {
     </div>
   );
 };
-
-export default Feed;

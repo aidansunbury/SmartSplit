@@ -95,7 +95,7 @@ export function AddPayment() {
       });
       form.reset(defaultValues);
       setOpen(false);
-      utils.feed.getGroupFeed.invalidate(); // TOD0: Replace me with your invalidation
+      utils.feed.get.invalidate();
     },
     onError: (error) => {
       toast({

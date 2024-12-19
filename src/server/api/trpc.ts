@@ -16,7 +16,7 @@ import type { TRPCPanelMeta } from "trpc-ui";
 import { z } from "zod";
 import { getServerAuthSession } from "~/server/auth";
 import { db } from "~/server/db";
-import { usersToGroups } from "~/server/db/schema";
+import { usersToGroups, groups, expenses, payments } from "~/server/db/schema";
 
 /**
  * 1. CONTEXT

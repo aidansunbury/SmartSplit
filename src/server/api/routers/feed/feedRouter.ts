@@ -5,7 +5,7 @@ import { createTRPCRouter, groupProcedure } from "~/server/api/trpc";
 import { expenses, payments } from "~/server/db/schema";
 
 export const feedRouter = createTRPCRouter({
-  getGroupFeed: groupProcedure.query(async ({ input, ctx }) => {
+  get: groupProcedure.query(async ({ input, ctx }) => {
     const expensesQuery = ctx.db.query.expenses.findMany({
       where: eq(expenses.groupId, input.groupId),
       orderBy: desc(expenses.createdAt),

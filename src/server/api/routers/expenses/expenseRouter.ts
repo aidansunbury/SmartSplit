@@ -107,21 +107,21 @@ export const expenseRouter = createTRPCRouter({
     }),
 
   // get an individual expense and comments
-  getExpenseWithComments: groupProcedure
-    .input(
-      z.object({
-        expenseId: z.string(),
-      }),
-    )
-    .query(async ({ input, ctx }) => {
-      const expenseWithComments = await ctx.db.query.expenses.findFirst({
-        where: eq(expenses.id, input.expenseId),
-        with: {
-          comments: {
-            orderBy: (comments, { asc }) => [asc(comments.createdAt)],
-          },
-        },
-      });
-      return expenseWithComments;
-    }),
+  // getExpenseWithComments: groupProcedure
+  //   .input(
+  //     z.object({
+  //       expenseId: z.string(),
+  //     }),
+  //   )
+  //   .query(async ({ input, ctx }) => {
+  //     const expenseWithComments = await ctx.db.query.expenses.findFirst({
+  //       where: eq(expenses.id, input.expenseId),
+  //       with: {
+  //         comments: {
+  //           orderBy: (comments, { asc }) => [asc(comments.createdAt)],
+  //         },
+  //       },
+  //     });
+  //     return expenseWithComments;
+  //   }),
 });

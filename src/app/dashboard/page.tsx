@@ -4,11 +4,11 @@ import { useQueryState } from "nuqs";
 import { useState, useMemo } from "react";
 import { useToast } from "~/hooks/use-toast";
 import { api } from "~/trpc/react";
-import { AddExpense } from "./AddExpense";
-import { AddPayment } from "./AddPayment";
-import Feed from "./Feed";
-import { Members } from "./Members";
-import SearchBar from "./SearchBar";
+import { AddExpense } from "./_components/AddExpense";
+import { AddPayment } from "./_components/AddPayment";
+import { Feed } from "./_components/feed/Feed";
+import { Members } from "./_components/Members";
+import SearchBar from "./_components/SearchBar";
 import fuzzysort from "fuzzysort";
 import { useDebounce } from "@uidotdev/usehooks";
 
@@ -42,13 +42,12 @@ export default function DashboardPage() {
   const [searchTerm, setSearchTerm] = useState(""); // State for search term
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
-  const { data: feed, isLoading: feedIsLoading } =
-    api.feed.getGroupFeed.useQuery(
-      { groupId: group as string },
-      {
-        enabled: group !== null,
-      },
-    );
+  const { data: feed, isLoading: feedIsLoading } = api.feed.get.useQuery(
+    { groupId: group as string },
+    {
+      enabled: group !== null,
+    },
+  );
   const { data: groupData, isLoading: groupIsLoading } = api.group.get.useQuery(
     { groupId: group as string },
   );

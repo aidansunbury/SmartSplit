@@ -72,7 +72,7 @@ export function AddExpense() {
         description: "Your expense has been added to the group",
       });
       form.reset(defaultValues);
-      utils.feed.getGroupFeed.invalidate({ groupId: group as string });
+      utils.feed.get.invalidate({ groupId: group as string });
       setOpen(false);
     },
     onError: (error) => {
