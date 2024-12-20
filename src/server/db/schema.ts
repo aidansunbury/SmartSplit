@@ -104,6 +104,24 @@ export const usersToGroupsRelations = relations(usersToGroups, ({ one }) => ({
   }),
 }));
 
+export const expenseCategories = pgEnum("expense_categories", [
+  "restaurants",
+  "entertainment",
+  "groceries",
+  "maintenance",
+  "mortgage",
+  "rent",
+  "household",
+  "gifts",
+  "lodging",
+  "parking",
+  "transportation",
+  "general",
+  "utilities",
+  "phone and internet",
+  "health and medical",
+]);
+
 export const expenses = createTable(
   "expenses",
   {
@@ -114,6 +132,7 @@ export const expenses = createTable(
     // Positive integer in cents
     amount: integer("amount").notNull(),
     description: text("description").notNull(),
+    category: expenseCategories("category"),
     notes: text("notes"),
     groupId: varchar("groupId", { length: 255 })
       .notNull()

@@ -99,12 +99,12 @@ const VenmoIcon = () => (
 type PaymentMethod = (typeof paymentMethods.enumValues)[number];
 
 export const PaymentMethodIconMap = new Map<PaymentMethod, React.ReactNode>([
-  ["PayPal", <PayPalIcon />],
-  ["Zelle", <ZelleIcon />],
-  ["Cash App", <CashAppIcon />],
-  ["Venmo", <VenmoIcon />],
-  ["Cash", <Banknote />],
-  ["Other", <CreditCard />],
+  ["PayPal", <PayPalIcon key="PayPal" />],
+  ["Zelle", <ZelleIcon key="Zelle" />],
+  ["Cash App", <CashAppIcon key="Cash App" />],
+  ["Venmo", <VenmoIcon key="Venmo" />],
+  ["Cash", <Banknote key="Cash" />],
+  ["Other", <CreditCard key="Other" />],
 ]);
 
 export { ZelleIcon, PayPalIcon, CashAppIcon, VenmoIcon };

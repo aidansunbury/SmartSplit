@@ -11,6 +11,7 @@ import { AddExpense } from "./_components/AddExpense";
 import { AddPayment } from "./_components/AddPayment";
 import { GroupInfoPanel } from "./_components/GroupInfoPanel";
 import SearchBar from "./_components/SearchBar";
+import { SettingsDialog } from "./_components/SettingsDialog";
 import { Feed } from "./_components/feed/Feed";
 import { FeedSkeleton, GroupSkeleton } from "./_components/feed/FeedSkeleton";
 
@@ -72,9 +73,9 @@ export default function DashboardPage() {
   return (
     <div>
       <h1 className="font-bold text-2xl xl:pl-16">{groupData.name}</h1>
-      <div className="my-2 flex flex-col-reverse justify-center space-x-2 overflow-hidden lg:flex-row">
+      <div className="my-2 flex flex-col-reverse justify-center overflow-hidden lg:flex-row lg:space-x-2">
         {/* Main content area */}
-        <div className="w-full rounded-lg bg-accent p-4 lg:max-w-[600px]">
+        <div className="w-full rounded-b-lg bg-accent p-4 lg:max-w-[600px] lg:rounded-lg">
           <div className="text-center">
             <SearchBar searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
             <div className="space-x-2">
@@ -94,12 +95,13 @@ export default function DashboardPage() {
         </div>
 
         {/* Right gutter */}
-        <div className="w-full rounded-lg bg-accent p-4 lg:w-1/4 lg:flex-none">
+        <div className="h-fit w-full rounded-t-lg bg-accent p-4 lg:w-1/4 lg:flex-none lg:rounded-lg">
           <Suspense fallback={<div>Loading...</div>}>
             <GroupInfoPanel />
           </Suspense>
         </div>
       </div>
+      <SettingsDialog />
     </div>
   );
 }

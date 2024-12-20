@@ -15,6 +15,21 @@ import { useState } from "react";
 import { useBeforeunload } from "react-beforeunload";
 
 import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { cn } from "~/lib/utils";
+
+import {
   Form,
   FormControl,
   FormField,
@@ -24,7 +39,7 @@ import {
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { PencilLine } from "lucide-react";
+import { Check, ChevronsUpDown, PencilLine } from "lucide-react";
 import type { z } from "zod";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -44,8 +59,15 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import type { InferSelectModel } from "drizzle-orm";
+import { CategoryIconMap } from "~/components/ExpenseCategoryIcons";
 import type { expenses } from "~/server/db/schema";
+import { expenseCategories } from "~/server/db/schema";
 import { api } from "~/trpc/react";
+
+const categories = expenseCategories.enumValues.map((category) => ({
+  value: category,
+  label: category.charAt(0).toUpperCase() + category.slice(1),
+}));
 
 export function EditExpense({
   expense,
@@ -60,8 +82,7 @@ export function EditExpense({
 
   const defaultValues: FormType = {
     ...expense,
-    amount:
-      `${Math.floor(expense.amount / 100).toString()}.00` as unknown as number,
+    amount: `${(expense.amount / 100).toString()}` as unknown as number,
   };
 
   const { toast } = useToast();
@@ -185,6 +206,85 @@ export function EditExpense({
               )}
             />
             <FormField
+              control={form.control}
+              name="category"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel>Category</FormLabel>
+                  <Popover modal={true}>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant="outline"
+                          // biome-ignore lint/a11y/useSemanticElements: <explanation>
+                          role="combobox"
+                          className={cn(
+                            "w-full justify-between",
+                            !field.value && "text-muted-foreground",
+                          )}
+                        >
+                          <div className="flex flex-row items-center space-x-2">
+                            {field.value && CategoryIconMap.get(field.value)}
+                            <span>
+                              {field.value
+                                ? categories.find(
+                                    (category) =>
+                                      category.value === field.value,
+                                  )?.label
+                                : "Select Category"}
+                            </span>
+                          </div>
+                          <ChevronsUpDown className="opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent
+                      className=" p-0 "
+                      side="bottom"
+                      style={{ width: "var(--radix-popover-trigger-width)" }}
+                    >
+                      <Command>
+                        <CommandInput
+                          placeholder="Search for a category..."
+                          className="h-9"
+                        />
+                        <CommandList className="max-h-[200px]">
+                          <CommandEmpty>No category found</CommandEmpty>
+                          <CommandGroup>
+                            {categories.map((category) => (
+                              <CommandItem
+                                value={category.label}
+                                key={category.value}
+                                onSelect={() => {
+                                  form.setValue("category", category.value, {
+                                    shouldTouch: true,
+                                    shouldDirty: true,
+                                  });
+                                }}
+                              >
+                                {CategoryIconMap.get(category.value)}
+                                {category.label}
+                                <Check
+                                  className={cn(
+                                    "ml-auto",
+                                    category.value === field.value
+                                      ? "opacity-100"
+                                      : "opacity-0",
+                                  )}
+                                />
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
               control={control}
               name="notes"
               render={({ field }) => (
@@ -223,7 +323,7 @@ export function EditExpense({
                 </Button>
 
                 <Button type="submit" disabled={isPending} loading={isPending}>
-                  Create Expense
+                  Edit Expense
                 </Button>
               </div>
             </DialogFooter>

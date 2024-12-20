@@ -2,6 +2,7 @@
 
 import type React from "react";
 import { PaymentMethodIconMap } from "~/components/BrandIcons";
+import { CategoryIconMap } from "~/components/ExpenseCategoryIcons";
 import { formatCurrency } from "~/lib/currencyFormat";
 import type { RouterOutputs } from "~/server/api/root";
 import type { GroupMemberMap } from "~/server/api/routers/groups/groupRouter";
@@ -71,6 +72,20 @@ export const FeedItem: React.FC<FeedSummaryProps> = ({
               <div>
                 <h3 className="font-semibold text-lg">Notes</h3>
                 <p>{feedItem.notes}</p>
+              </div>
+            )}
+            {feedItem.category && (
+              <div>
+                <h3 className="font-semibold text-lg">Category</h3>
+                <div className="flex flex-row items-center space-x-1">
+                  <div className="flex h-10 w-10 items-center justify-center">
+                    {CategoryIconMap.get(feedItem.category)}
+                  </div>
+                  <span className="font-semibold text-base">
+                    {feedItem.category.charAt(0).toUpperCase() +
+                      feedItem.category.slice(1)}{" "}
+                  </span>
+                </div>
               </div>
             )}
           </div>

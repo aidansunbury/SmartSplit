@@ -64,7 +64,6 @@ export function EditPayment({
 }: { payment: InferSelectModel<typeof payments> }) {
   const [isOpen, setOpen] = useState<boolean>(false);
   const [group] = useQueryState("group");
-  const { data: user } = api.me.useQuery();
   const { data: groupMembers } = api.group.get.useQuery({
     groupId: group as string,
   });
@@ -78,8 +77,7 @@ export function EditPayment({
 
   const defaultValues = {
     ...payment,
-    amount:
-      `${Math.floor(payment.amount / 100).toString()}.00` as unknown as number,
+    amount: `${(payment.amount / 100).toString()}` as unknown as number,
   };
   const { toast } = useToast();
   const form = useForm<FormType>({
