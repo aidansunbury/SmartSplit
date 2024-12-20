@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { CircleDollarSign } from "lucide-react";
+import { PencilLine } from "lucide-react";
 import type { z } from "zod";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -36,24 +36,32 @@ import {
   useForm,
 } from "react-hook-form";
 import { currencyValidator } from "~/lib/currencyValidator";
-import { createExpenseValidator } from "~/server/api/routers/expenses/expenseValidators";
+import { editExpenseValidator } from "~/server/api/routers/expenses/expenseValidators";
 
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import type { InferSelectModel } from "drizzle-orm";
+import type { expenses } from "~/server/db/schema";
 import { api } from "~/trpc/react";
 
-export function AddExpense() {
+export function EditExpense({
+  expense,
+}: { expense: InferSelectModel<typeof expenses> }) {
   const [group] = useQueryState("group");
   const [isOpen, setOpen] = useState<boolean>(false);
 
-  const formValidator = createExpenseValidator.extend({
+  const formValidator = editExpenseValidator.extend({
     amount: currencyValidator,
   });
   type FormType = z.infer<typeof formValidator>;
 
   const defaultValues: FormType = {
-    groupId: group as string,
-    amount: 0,
-    description: "",
-    notes: "",
+    ...expense,
+    amount:
+      `${Math.floor(expense.amount / 100).toString()}.00` as unknown as number,
   };
 
   const { toast } = useToast();
@@ -64,11 +72,10 @@ export function AddExpense() {
 
   const { control, handleSubmit, formState } = form;
   const utils = api.useUtils();
-  const { mutate, isPending } = api.expense.create.useMutation({
+  const { mutate, isPending } = api.expense.edit.useMutation({
     onSuccess: () => {
       toast({
-        title: "Expense created successfully",
-        description: "Your expense has been added to the group",
+        title: "Expense edited successfully",
       });
       form.reset(defaultValues);
       utils.feed.get.invalidate({ groupId: group as string });
@@ -77,7 +84,7 @@ export function AddExpense() {
     },
     onError: (error) => {
       toast({
-        title: error.data?.code ?? "Failed to create expense",
+        title: error.data?.code ?? "Failed to edit expense",
         description: error.message,
       });
     },
@@ -85,7 +92,6 @@ export function AddExpense() {
   useBeforeunload(formState.isDirty ? () => "Unsaved changes" : undefined);
 
   const onSubmit: SubmitHandler<FormType> = async (data) => {
-    console.log(data);
     mutate(data);
   };
 
@@ -101,12 +107,18 @@ export function AddExpense() {
         form.reset(defaultValues);
       }}
     >
-      <DialogTrigger asChild>
-        <Button variant={"default"}>
-          <CircleDollarSign size={24} />
-          Add Expense
-        </Button>
-      </DialogTrigger>
+      <Tooltip>
+        <TooltipTrigger>
+          <DialogTrigger asChild>
+            <Button variant="ghost" size="smallIcon">
+              <PencilLine />
+            </Button>
+          </DialogTrigger>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>Edit Expense</p>
+        </TooltipContent>
+      </Tooltip>
 
       <DialogContent
         className="sm:max-w-[425px]"
@@ -125,7 +137,7 @@ export function AddExpense() {
             className="space-y-2"
           >
             <DialogHeader>
-              <DialogTitle>Add Expense</DialogTitle>
+              <DialogTitle>Edit Expense</DialogTitle>
               <DialogDescription>
                 Add an expense to be shared with your group.
               </DialogDescription>

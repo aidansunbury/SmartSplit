@@ -32,33 +32,25 @@ import {
 
 import { SidebarMenuButton } from "@/components/ui/sidebar";
 import { useToast } from "@/hooks/use-toast";
-import { safeInsertSchema } from "@/lib/safeInsertSchema";
-import { groups } from "@/server/db/schema";
+
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CirclePlus } from "lucide-react";
 import { useQueryState } from "nuqs";
-import { z } from "zod";
+import type { z } from "zod";
+import { createGroupSchema } from "~/server/api/routers/groups/groupValidators";
 
 export function CreateGroup() {
   const [isOpen, setOpen] = useState<boolean>(false);
   const [_, setGroup] = useQueryState("group");
   const { data: user } = api.me.useQuery();
 
-  const formValidator = safeInsertSchema(groups)
-    .omit({
-      joinCode: true,
-      settledSince: true,
-    })
-    .extend({
-      name: z.string().min(1),
-    });
+  const formValidator = createGroupSchema;
 
   type FormType = z.infer<typeof formValidator>;
 
   const defaultValues: FormType = {
     name: "",
     description: null,
-    ownerId: user?.id ?? "",
   };
 
   const { toast } = useToast();

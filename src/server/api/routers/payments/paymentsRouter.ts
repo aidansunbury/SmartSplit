@@ -1,7 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { and, eq, sql } from "drizzle-orm";
 import { z } from "zod";
-import { safeInsertSchema } from "~/lib/safeInsertSchema";
 import {
   createTRPCRouter,
   groupProcedure,
@@ -9,16 +8,20 @@ import {
 } from "~/server/api/trpc";
 import type { DB } from "~/server/db";
 import { payments, usersToGroups } from "~/server/db/schema";
+import {
+  createPaymentValidator,
+  updatePaymentValidator,
+} from "./paymentValidators";
 
 const paymentOwnerProcedure = protectedProcedure
-  .input(z.object({ paymentId: z.string() }))
+  .input(z.object({ id: z.string() }))
   .use(async ({ ctx, next, input }) => {
     const [payment] = await ctx.db
       .select()
       .from(payments)
       .where(
         and(
-          eq(payments.id, input.paymentId),
+          eq(payments.id, input.id),
           eq(payments.fromUserId, ctx.session.user.id),
         ),
       );
@@ -83,7 +86,7 @@ export const paymentsRouter = createTRPCRouter({
     .meta({
       description: "Record a payment. You can only record your own payments.",
     })
-    .input(safeInsertSchema(payments).omit({ fromUserId: true }))
+    .input(createPaymentValidator)
     .mutation(async ({ ctx, input }) => {
       const payment = await ctx.db.transaction(async (trx) => {
         // Record the payment
@@ -123,11 +126,7 @@ export const paymentsRouter = createTRPCRouter({
       description:
         "Edit a payment. Only the creator of a payment can edit it. The payment group and recipient can not be changed.",
     })
-    .input(
-      safeInsertSchema(payments)
-        .omit({ fromUserId: true, groupId: true, toUserId: true })
-        .partial(),
-    )
+    .input(updatePaymentValidator)
     .mutation(async ({ ctx, input }) => {
       const payment = await ctx.db.transaction(async (trx) => {
         // Update the payment
@@ -174,7 +173,7 @@ export const paymentsRouter = createTRPCRouter({
       });
       return payment;
     }),
-  delete: paymentOwnerProcedure.mutation(async ({ ctx, input }) => {
+  delete: paymentOwnerProcedure.mutation(async ({ ctx }) => {
     const payment = await ctx.db.transaction(async (trx) => {
       // Update the balances
       const [updatedPayeeBalancePromise, updatedPayerBalancePromise] =

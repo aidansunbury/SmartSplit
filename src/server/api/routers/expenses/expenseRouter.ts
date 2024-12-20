@@ -2,7 +2,6 @@ import { z } from "zod";
 
 import { TRPCError } from "@trpc/server";
 import { type InferSelectModel, and, eq } from "drizzle-orm";
-import { safeInsertSchema } from "~/lib/safeInsertSchema";
 import {
   createTRPCRouter,
   groupProcedure,
@@ -10,16 +9,20 @@ import {
 } from "~/server/api/trpc";
 import type { DB } from "~/server/db";
 import { expenses, groups, usersToGroups } from "~/server/db/schema";
+import {
+  createExpenseValidator,
+  editExpenseValidator,
+} from "./expenseValidators";
 
 const expenseOwnerProcedure = protectedProcedure
-  .input(z.object({ expenseId: z.string() }))
+  .input(z.object({ id: z.string() }))
   .use(async ({ ctx, next, input }) => {
     const [expense] = await ctx.db
       .select()
       .from(expenses)
       .where(
         and(
-          eq(expenses.id, input.expenseId),
+          eq(expenses.id, input.id),
           eq(expenses.userId, ctx.session.user.id),
         ),
       );
@@ -101,9 +104,7 @@ const updateBalancesFromExpense = (
 
 export const expenseRouter = createTRPCRouter({
   create: groupProcedure
-    .input(
-      safeInsertSchema(expenses).merge(z.object({ amount: z.number().int() })),
-    )
+    .input(createExpenseValidator)
     .mutation(async ({ input, ctx }) => {
       const newExpense = await ctx.db.transaction(async (trx) => {
         const newExpense = trx
@@ -163,14 +164,7 @@ export const expenseRouter = createTRPCRouter({
       return newExpense;
     }),
   edit: expenseOwnerProcedure
-    .input(
-      safeInsertSchema(expenses)
-        .merge(z.object({ amount: z.number().int() }))
-        .omit({
-          groupId: true,
-        })
-        .partial(),
-    )
+    .input(editExpenseValidator)
     .mutation(async ({ input, ctx }) => {
       const expense = await ctx.db.transaction(async (trx) => {
         const updatedExpensePromise = trx

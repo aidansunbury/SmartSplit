@@ -45,15 +45,23 @@ import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { z } from "zod";
 
-import { DollarSign, HandCoins } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import type { payments } from "@/server/db/schema";
+import type { InferSelectModel } from "drizzle-orm";
+import { DollarSign, PencilLine, Undo2 } from "lucide-react";
 import { useQueryState } from "nuqs";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { formatCurrency } from "~/lib/currencyFormat";
 import { currencyValidator } from "~/lib/currencyValidator";
-import { getFormattedDate } from "~/lib/utils";
-import { createPaymentValidator } from "~/server/api/routers/payments/paymentValidators";
+import { updatePaymentValidator } from "~/server/api/routers/payments/paymentValidators";
 
-export function AddPayment() {
+export function EditPayment({
+  payment,
+}: { payment: InferSelectModel<typeof payments> }) {
   const [isOpen, setOpen] = useState<boolean>(false);
   const [group] = useQueryState("group");
   const { data: user } = api.me.useQuery();
@@ -61,21 +69,18 @@ export function AddPayment() {
     groupId: group as string,
   });
 
-  const formValidator = createPaymentValidator.extend({
+  // Todo omit the recipient, as that can not be changed at the moment
+  const formValidator = updatePaymentValidator.extend({
     amount: currencyValidator,
   });
 
   type FormType = z.infer<typeof formValidator>;
 
-  const defaultValues: FormType = {
-    description: `${getFormattedDate()} Payment`,
-    amount: 0,
-    groupId: group as string,
-    toUserId: "",
-    notes: "",
-    paymentMethod: undefined,
+  const defaultValues = {
+    ...payment,
+    amount:
+      `${Math.floor(payment.amount / 100).toString()}.00` as unknown as number,
   };
-
   const { toast } = useToast();
   const form = useForm<FormType>({
     defaultValues,
@@ -83,7 +88,7 @@ export function AddPayment() {
   });
   const { control, handleSubmit, formState } = form;
   const utils = api.useUtils();
-  const { mutate, isPending } = api.payments.create.useMutation({
+  const { mutate, isPending } = api.payments.edit.useMutation({
     onSuccess: (data) => {
       toast({
         title: "Form Submitted",
@@ -124,12 +129,18 @@ export function AddPayment() {
         form.reset(defaultValues);
       }}
     >
-      <DialogTrigger asChild>
-        <Button variant={"default"}>
-          <HandCoins size={24} />
-          Add Payment
-        </Button>
-      </DialogTrigger>
+      <Tooltip>
+        <TooltipTrigger>
+          <DialogTrigger asChild>
+            <Button variant="ghost" size="smallIcon">
+              <PencilLine />
+            </Button>
+          </DialogTrigger>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>Edit Payment</p>
+        </TooltipContent>
+      </Tooltip>
 
       <DialogContent
         onInteractOutside={(e) => {
@@ -142,9 +153,9 @@ export function AddPayment() {
         }}
       >
         <DialogHeader>
-          <DialogTitle>Add Payment</DialogTitle>
+          <DialogTitle>Edit Payment</DialogTitle>
           <DialogDescription>
-            Record a payments between group members.
+            Balances will be recalculated if the payment amount is changed
           </DialogDescription>
         </DialogHeader>
         <div className="w-full">
@@ -167,79 +178,55 @@ export function AddPayment() {
                 )}
               />
 
-              {/* // TODO: When a user is selected, it should auto fill the amount that they are owed */}
-              <FormField
-                control={form.control}
-                name="toUserId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel optional={false}>Recipient</FormLabel>
-                    <Select
-                      value={field.value}
-                      onValueChange={(value) => {
-                        if (!formState.dirtyFields.amount) {
-                          const owed = Math.floor(
-                            (groupMembers?.users.find(
-                              (member) => member.user.id === value,
-                            )?.balance ?? defaultValues.amount) / 100,
-                          );
-                          form.setValue(
-                            "amount",
-                            // @ts-ignore - value is later coerced to a number, but input "expects" a string
-                            String(owed > 0 ? owed : defaultValues.amount),
-                          );
-                        }
-                        field.onChange(value);
-                      }}
-                      disabled={!groupMembers}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select A Group Member" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {groupMembers?.users
-                          .filter((member) => member.user.id !== user?.id)
-                          .map((member) => (
-                            <SelectItem
-                              key={member.user.id}
-                              value={member.user.id}
-                              disabled={member.balance <= 0}
-                            >
-                              <div className="flex flex-row items-center space-x-2">
-                                <Avatar className="h-6 w-6 rounded-lg">
-                                  <AvatarImage
-                                    src={member.user.image ?? ""}
-                                    alt={member.user.name}
-                                  />
-                                  <AvatarFallback className="rounded-lg">
-                                    {":)"}
-                                  </AvatarFallback>
-                                </Avatar>
-                                <span>{member.user.name}</span>
-                                {member.balance >= 0 ? (
-                                  <span>
-                                    <span className="text-success">
-                                      is owed{" "}
-                                      {formatCurrency(Math.abs(member.balance))}
-                                    </span>{" "}
-                                  </span>
-                                ) : (
-                                  <span className="text-destructive">
-                                    owes{" "}
-                                    {formatCurrency(Math.abs(member.balance))}
-                                  </span>
-                                )}
-                              </div>
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {/* Recipient can not be edited, so this select box is purely information */}
+              <FormItem>
+                <FormLabel>Recipient</FormLabel>
+                <Select value={payment.toUserId} disabled>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select A Group Member" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {groupMembers?.users.map((member) => (
+                      <SelectItem
+                        key={member.user.id}
+                        value={member.user.id}
+                        disabled={member.balance <= 0}
+                      >
+                        <div className="flex flex-row items-center space-x-2">
+                          <Avatar className="h-6 w-6 rounded-lg">
+                            <AvatarImage
+                              src={member.user.image ?? ""}
+                              alt={member.user.name}
+                            />
+                            <AvatarFallback className="rounded-lg">
+                              {":)"}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span>{member.user.name}</span>
+                          {member.balance >= 0 ? (
+                            <span>
+                              <span className="text-success">
+                                is owed{" "}
+                                {formatCurrency(Math.abs(member.balance))}
+                              </span>{" "}
+                            </span>
+                          ) : (
+                            <span className="text-destructive">
+                              owes {formatCurrency(Math.abs(member.balance))}
+                            </span>
+                          )}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormDescription>
+                  Payment recipient can not be changed after payment is created
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
 
               <FormField
                 control={control}
@@ -330,7 +317,8 @@ export function AddPayment() {
                   onClick={() => form.reset(defaultValues)}
                   variant={"destructive"}
                 >
-                  Reset
+                  <Undo2 className="mr-2" />
+                  Discard Changes
                 </Button>
                 <div className="space-x-2">
                   <Button

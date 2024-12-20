@@ -3,6 +3,7 @@ import {
   check,
   index,
   integer,
+  pgEnum,
   pgTableCreator,
   primaryKey,
   text,
@@ -137,6 +138,15 @@ export const expensesRelations = relations(expenses, ({ one, many }) => ({
   comments: many(comments),
 }));
 
+export const paymentMethods = pgEnum("payment_methods", [
+  "Cash",
+  "PayPal",
+  "Venmo",
+  "Cash App",
+  "Zelle",
+  "Other",
+]);
+
 export const payments = createTable(
   "payments",
   {
@@ -146,6 +156,7 @@ export const payments = createTable(
       .$defaultFn(() => createPrefixedUlid("pay")),
     description: text("description").notNull(),
     notes: text("notes"),
+    paymentMethod: paymentMethods("paymentMethods"),
     amount: integer("amount").notNull(),
     fromUserId: varchar("fromUserId", { length: 255 })
       .notNull()

@@ -1,10 +1,10 @@
 "use client";
-
-import { PencilLine } from "lucide-react";
 import type React from "react";
 import { formatCurrency } from "~/lib/currencyFormat";
 import type { RouterOutputs } from "~/server/api/root";
 import { api } from "~/trpc/react";
+import { EditExpense } from "../EditExpense";
+import { EditPayment } from "../EditPayment";
 import { DeleteFeedItemDialog } from "./DeleteFeedItemDialog";
 
 interface FeedSummaryProps {
@@ -110,7 +110,11 @@ const FeedSummary: React.FC<FeedSummaryProps> = ({
         {feedItem.notes}{" "}
         {isOwner && (
           <div className="absolute top-2 right-2 flex flex-row space-x-2">
-            <PencilLine size={20} />
+            {isExpense ? (
+              <EditExpense expense={feedItem} />
+            ) : (
+              <EditPayment payment={feedItem} />
+            )}
             <DeleteFeedItemDialog
               itemType={isExpense ? "expense" : "payment"}
               itemDescription={feedItem.description}

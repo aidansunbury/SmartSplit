@@ -2,23 +2,17 @@ import { z } from "zod";
 
 import { TRPCError } from "@trpc/server";
 import { type InferSelectModel, eq } from "drizzle-orm";
-import { safeInsertSchema } from "~/lib/safeInsertSchema";
 import {
   createTRPCRouter,
   groupProcedure,
   protectedProcedure,
 } from "~/server/api/trpc";
 import { groups, type users, usersToGroups } from "~/server/db/schema";
+import { createGroupSchema } from "./groupValidators";
 
 export const groupRouter = createTRPCRouter({
   create: protectedProcedure
-    .input(
-      safeInsertSchema(groups).omit({
-        joinCode: true,
-        settledSince: true,
-        ownerId: true,
-      }),
-    )
+    .input(createGroupSchema)
     .mutation(async ({ input, ctx }) => {
       const newGroup = await ctx.db.transaction(async (trx) => {
         const [newGroup] = await trx

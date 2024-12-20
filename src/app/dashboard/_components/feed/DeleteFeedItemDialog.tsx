@@ -52,7 +52,7 @@ export const DeleteFeedItemDialog = ({
       <Tooltip>
         <TooltipTrigger>
           <AlertDialogTrigger asChild>
-            <Button variant="ghost" size="smallIcon" className="border">
+            <Button variant="ghost" size="smallIcon">
               <Trash2 />
             </Button>
           </AlertDialogTrigger>
@@ -78,9 +78,9 @@ export const DeleteFeedItemDialog = ({
           <AlertDialogAction
             onClick={() => {
               if (itemType === "expense") {
-                deleteExpense({ expenseId: itemId });
+                deleteExpense({ id: itemId });
               } else {
-                deletePayment({ paymentId: itemId });
+                deletePayment({ id: itemId });
               }
             }}
             variant={"destructive"}
