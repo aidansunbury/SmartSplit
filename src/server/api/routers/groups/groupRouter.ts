@@ -10,6 +10,8 @@ import {
 import { groups, type users, usersToGroups } from "~/server/db/schema";
 import { createGroupSchema } from "./groupValidators";
 
+export type GroupMemberMap = Map<string, InferSelectModel<typeof users>>;
+
 export const groupRouter = createTRPCRouter({
   create: protectedProcedure
     .input(createGroupSchema)

@@ -40,11 +40,18 @@ export const DeleteFeedItemDialog = ({
       title: `${itemDescription} ${itemType} deleted successfully`,
     });
   };
+  const onError = () => {
+    toast({
+      title: `Failed to delete ${itemDescription} ${itemType}`,
+    });
+  };
   const { mutate: deleteExpense } = api.expense.delete.useMutation({
     onSuccess,
+    onError,
   });
   const { mutate: deletePayment } = api.payments.delete.useMutation({
     onSuccess,
+    onError,
   });
 
   return (

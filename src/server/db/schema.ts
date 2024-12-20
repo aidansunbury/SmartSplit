@@ -1,5 +1,6 @@
 import { relations, sql } from "drizzle-orm";
 import {
+  boolean,
   check,
   index,
   integer,
@@ -84,6 +85,9 @@ export const usersToGroups = createTable(
     // Positive or negative balance within the group indicating how much the user is owed or owes respectively
     // all balances within a group should sum to 0
     balance: integer("balance").notNull().default(sql`0`),
+
+    // TODO: when leaving a group, the association should not be outright deleted, as then expense and payment records would be orphaned. Marking them as inactive will hide the group in the UI and prevent them from modifying the group, but still allow current members to view the transaction history.
+    active: boolean("active").notNull().default(true),
   },
   (t) => ({
     id: primaryKey({ columns: [t.userId, t.groupId] }),

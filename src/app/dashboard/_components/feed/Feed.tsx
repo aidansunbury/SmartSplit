@@ -9,12 +9,13 @@ import { CircleDollarSign, HandCoins } from "lucide-react";
 import { formatCurrency } from "~/lib/currencyFormat";
 import { formatDate } from "~/lib/utils";
 import type { RouterOutputs } from "~/server/api/root";
-import FeedSummary from "./FeedItem";
+import type { GroupMemberMap } from "~/server/api/routers/groups/groupRouter";
+import { FeedItem } from "./FeedItem";
 
 type Feed = RouterOutputs["feed"]["get"];
 interface FeedProps {
   filteredResult: Feed;
-  groupMembers: Record<string, Record<string, string>>;
+  groupMembers: GroupMemberMap;
 }
 export const Feed: React.FC<FeedProps> = ({ filteredResult, groupMembers }) => {
   return (
@@ -43,21 +44,21 @@ export const Feed: React.FC<FeedProps> = ({ filteredResult, groupMembers }) => {
                 <span className="text-right text-sm">
                   {"userId" in item ? ( // Expense
                     <>
-                      {groupMembers[item.userId]?.name} paid{" "}
+                      {groupMembers.get(item.userId)?.name} paid{" "}
                       {formatCurrency(item.amount)}
                     </>
                   ) : "toUserId" in item ? ( // Payment
                     <>
-                      {groupMembers[item.fromUserId]?.name} paid{" "}
+                      {groupMembers.get(item.fromUserId)?.name} paid{" "}
                       {formatCurrency(item.amount)} to{" "}
-                      {groupMembers[item.toUserId]?.name}
+                      {groupMembers.get(item.toUserId)?.name}
                     </>
                   ) : null}
                 </span>
               </div>
             </AccordionTrigger>
             <AccordionContent>
-              <FeedSummary feedItem={item} groupMembers={groupMembers} />
+              <FeedItem feedItem={item} groupMembers={groupMembers} />
             </AccordionContent>
           </AccordionItem>
         ))}

@@ -1,30 +1,23 @@
 "use client";
 
 import { AvatarImage } from "@radix-ui/react-avatar";
+import { Crown, Settings, UserPlus } from "lucide-react";
 import { useQueryState } from "nuqs";
 import { Avatar } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
 import { formatCurrency } from "~/lib/currencyFormat";
 import { api } from "~/trpc/react";
+import { SettingsDialog } from "./SettingsDialog";
 
-export function Members() {
+export function GroupInfoPanel() {
   const [group] = useQueryState("group");
-  const { data: groupWithMembers, isLoading } = api.group.get.useQuery(
-    { groupId: group as string },
-    {
-      enabled: group !== null,
-    },
-  );
-
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
-  if (!groupWithMembers) {
-    return <div>No feed</div>;
-  }
+  const [settings, setSettings] = useQueryState("settings");
+  const [groupWithMembers] = api.group.get.useSuspenseQuery({
+    groupId: group as string,
+  });
 
   return (
-    <div className="flex flex-col space-y-4">
+    <div className="flex w-full flex-col space-y-4 ">
       {groupWithMembers.users.map((user) => {
         const isNegative = user.balance < 0;
 
@@ -37,7 +30,12 @@ export function Members() {
               <AvatarImage src={user.user.image ?? undefined} />
             </Avatar>
             <div className="flex flex-col">
-              <h2 className="font-medium">{user.user.name}</h2>
+              <span className="flex items-center space-x-2">
+                <h2 className="font-medium">{user.user.name}</h2>
+                {user.user.id === groupWithMembers.ownerId && (
+                  <Crown className="h-6 w-6 text-yellow-500" />
+                )}
+              </span>
               <div
                 className={`${isNegative ? "text-orange-500" : "text-green-500"} text-sm`}
               >
@@ -52,10 +50,24 @@ export function Members() {
           </div>
         );
       })}
-      {/* View Details Button? */}
-      <Button variant="link" size="sm" className="text-blue-500">
-        View Details
+      <Button
+        variant={"ghost"}
+        className="border"
+        onClick={() => setSettings("invite")}
+      >
+        <UserPlus className="h-6 w-6" />
+        <p>invite people</p>
       </Button>
+      <Button
+        variant={"ghost"}
+        className="border"
+        onClick={() => setSettings("general")}
+      >
+        <Settings className="h-6 w-6" />
+        <p>settings</p>
+      </Button>
+
+      <SettingsDialog />
     </div>
   );
 }

@@ -1,7 +1,10 @@
 "use client";
+
 import type React from "react";
+import { PaymentMethodIconMap } from "~/components/BrandIcons";
 import { formatCurrency } from "~/lib/currencyFormat";
 import type { RouterOutputs } from "~/server/api/root";
+import type { GroupMemberMap } from "~/server/api/routers/groups/groupRouter";
 import { api } from "~/trpc/react";
 import { EditExpense } from "../EditExpense";
 import { EditPayment } from "../EditPayment";
@@ -9,7 +12,7 @@ import { DeleteFeedItemDialog } from "./DeleteFeedItemDialog";
 
 interface FeedSummaryProps {
   feedItem: RouterOutputs["feed"]["get"][0];
-  groupMembers: Record<string, Record<string, string>>;
+  groupMembers: GroupMemberMap;
 }
 
 const UserDisplay = ({
@@ -17,12 +20,12 @@ const UserDisplay = ({
   image,
   verb,
   amount,
-}: { name: string; image: string; verb: string; amount: number }) => {
+}: { name: string; image: string | null; verb: string; amount: number }) => {
   return (
     <div className="flex flex-row items-center space-x-2">
       <img
-        src={image}
-        alt="payer profile"
+        src={image ?? ""}
+        alt="profile"
         width={40}
         height={40}
         className="rounded-full"
@@ -35,59 +38,116 @@ const UserDisplay = ({
   );
 };
 
-const FeedSummary: React.FC<FeedSummaryProps> = ({
+export const FeedItem: React.FC<FeedSummaryProps> = ({
   feedItem,
   groupMembers,
 }) => {
   const { data: me } = api.me.useQuery();
-  // Determine if the feed item is an expense or payment
-  let isExpense = true;
-  let evenSplit = 0;
-  let isOwner = false;
-
-  // get the payer and receiver in this expense/payment
-  let payerObj: Record<string, string> | undefined;
-  let receiverObj: Record<string, string> | undefined;
   if ("userId" in feedItem) {
-    payerObj = groupMembers[feedItem.userId];
-    isExpense = true;
-    evenSplit = Math.floor(feedItem.amount / Object.keys(groupMembers).length);
-    isOwner = feedItem.userId === me?.id;
-  } else if ("fromUserId" in feedItem && "toUserId" in feedItem) {
-    payerObj = groupMembers[feedItem.fromUserId];
-    receiverObj = groupMembers[feedItem.toUserId];
-    isExpense = false;
-    isOwner = feedItem.fromUserId === me?.id;
-  }
+    //* FeedItem is an Expense
+    const isOwner = feedItem.userId === me?.id;
+    const payerObj = groupMembers.get(feedItem.userId);
+    const evenSplit = Math.floor(feedItem.amount / groupMembers.size);
 
-  function renderPayment() {
-    if (isExpense) {
-      return (
-        <>
+    if (!payerObj) {
+      return null;
+    }
+    return (
+      <div className="flex flex-col lg:flex-row-reverse">
+        <div className="relative lg:w-1/2 ">
+          {isOwner && (
+            <div className="float-right mt-2 mr-2 mb-2 ml-2 flex gap-2">
+              <EditExpense expense={feedItem} />
+
+              <DeleteFeedItemDialog
+                itemType={"expense"}
+                itemDescription={feedItem.description}
+                itemId={feedItem.id}
+              />
+            </div>
+          )}
+          <div className="space-y-2 text-left">
+            {feedItem.notes && (
+              <div>
+                <h3 className="font-semibold text-lg">Notes</h3>
+                <p>{feedItem.notes}</p>
+              </div>
+            )}
+          </div>
+        </div>
+        <div className="flex flex-col space-y-1 lg:w-1/2">
           <UserDisplay
             name={payerObj?.name}
-            image={payerObj?.image}
+            image={payerObj?.image ?? ""}
             verb="lent"
-            amount={evenSplit * (Object.keys(groupMembers).length - 1)}
+            amount={evenSplit * (groupMembers.size - 1)}
           />
           {groupMembers &&
-            Object.keys(groupMembers).map(
-              (userId) =>
-                userId !== payerObj?.id && (
+            Array.from(groupMembers).map(
+              ([id, member]) =>
+                id !== payerObj?.id && (
                   <UserDisplay
-                    key={userId}
-                    name={groupMembers[userId].name}
-                    image={groupMembers[userId].image}
+                    key={id}
+                    name={member.name}
+                    image={member.image}
                     verb="owes"
                     amount={evenSplit}
                   />
                 ),
             )}
-        </>
-      );
-    }
-    return (
-      <>
+        </div>
+      </div>
+    );
+  }
+  const isOwner = feedItem.fromUserId === me?.id;
+
+  const payerObj = groupMembers.get(feedItem.fromUserId);
+  const receiverObj = groupMembers.get(feedItem.toUserId);
+
+  if (!payerObj || !receiverObj) {
+    return null;
+  }
+
+  //* Payment
+  return (
+    <div className="flex flex-col lg:flex-row-reverse">
+      <div className="relative lg:w-full">
+        {isOwner && (
+          <div className="float-right mt-2 mr-2 mb-2 ml-2 flex gap-2">
+            <EditPayment payment={feedItem} />
+
+            <DeleteFeedItemDialog
+              itemType={"payment"}
+              itemDescription={feedItem.description}
+              itemId={feedItem.id}
+            />
+          </div>
+        )}
+
+        <div className="space-y-2 text-left">
+          {feedItem.notes && (
+            <div>
+              <h3 className="font-semibold text-lg">Notes</h3>
+              <p>{feedItem.notes}</p>
+            </div>
+          )}
+          {feedItem.paymentMethod && (
+            <div>
+              <h3 className="font-semibold text-lg">Payment Method</h3>
+
+              <div className="flex flex-row items-center space-x-1">
+                <div className="flex h-10 w-10 items-center justify-center">
+                  {PaymentMethodIconMap.get(feedItem.paymentMethod)}
+                </div>
+                <span className="font-semibold text-base">
+                  {feedItem.paymentMethod}
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+      <div className="flex flex-col space-y-1 lg:w-full">
         <UserDisplay
           name={payerObj?.name}
           image={payerObj?.image}
@@ -100,32 +160,7 @@ const FeedSummary: React.FC<FeedSummaryProps> = ({
           verb="received"
           amount={feedItem.amount}
         />
-      </>
-    );
-  }
-
-  return (
-    <div className="flex flex-col lg:flex-row-reverse">
-      <div className="relative border lg:w-1/2">
-        {feedItem.notes}{" "}
-        {isOwner && (
-          <div className="absolute top-2 right-2 flex flex-row space-x-2">
-            {isExpense ? (
-              <EditExpense expense={feedItem} />
-            ) : (
-              <EditPayment payment={feedItem} />
-            )}
-            <DeleteFeedItemDialog
-              itemType={isExpense ? "expense" : "payment"}
-              itemDescription={feedItem.description}
-              itemId={feedItem.id}
-            />
-          </div>
-        )}
       </div>
-      <div className="flex flex-col space-y-1 lg:w-1/2">{renderPayment()}</div>
     </div>
   );
 };
-
-export default FeedSummary;

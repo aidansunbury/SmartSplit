@@ -4,17 +4,19 @@ import { useQueryState } from "nuqs";
 import { useDebounce } from "@uidotdev/usehooks";
 import fuzzysort from "fuzzysort";
 import { useMemo, useState } from "react";
+import { Suspense } from "react";
 import { useToast } from "~/hooks/use-toast";
 import { api } from "~/trpc/react";
 import { AddExpense } from "./_components/AddExpense";
 import { AddPayment } from "./_components/AddPayment";
-import { Members } from "./_components/Members";
+import { GroupInfoPanel } from "./_components/GroupInfoPanel";
 import SearchBar from "./_components/SearchBar";
 import { Feed } from "./_components/feed/Feed";
+import { FeedSkeleton, GroupSkeleton } from "./_components/feed/FeedSkeleton";
 
 // If the user is not a part of any groups, CTA to create or join
 export default function DashboardPage() {
-  const [group, _setGroup] = useQueryState("group");
+  const [group] = useQueryState("group");
   const [join, setJoin] = useQueryState("join");
   const { toast } = useToast();
 
@@ -60,33 +62,19 @@ export default function DashboardPage() {
       : feed;
   }, [feed, debouncedSearchTerm]);
 
-  if (feedIsLoading || groupIsLoading) {
-    return <div>Loading...</div>;
+  if (groupIsLoading) {
+    return <GroupSkeleton />;
   }
   if (!groupData) {
     return <div>Group does not exist or you are not added to this group</div>;
   }
-  if (!feed) {
-    return <div>No feed</div>;
-  }
-
-  // TODO this should be moved to the server
-  // Construct a dictionary of user ids to user names in the group
-  const groupMembers: Record<string, Record<string, string>> = {};
-  groupData.users.forEach((user) => {
-    groupMembers[user.user.id] = {
-      id: user.user.id,
-      name: user.user.name,
-      image: user.user.image || "",
-    };
-  });
 
   return (
     <div>
       <h1 className="font-bold text-2xl xl:pl-16">{groupData.name}</h1>
-      <div className="flex min-h-screen flex-col-reverse justify-center overflow-hidden lg:flex-row">
+      <div className="my-2 flex flex-col-reverse justify-center space-x-2 overflow-hidden lg:flex-row">
         {/* Main content area */}
-        <div className="w-full max-w-[600px] p-4">
+        <div className="w-full rounded-lg bg-accent p-4 lg:max-w-[600px]">
           <div className="text-center">
             <SearchBar searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
             <div className="space-x-2">
@@ -94,16 +82,22 @@ export default function DashboardPage() {
               <AddPayment />
               {/* //Todo Invite Group member */}
             </div>
-            <Feed
-              filteredResult={filteredFeedItems}
-              groupMembers={groupMembers}
-            />
+            {feedIsLoading ? (
+              <FeedSkeleton />
+            ) : (
+              <Feed
+                filteredResult={filteredFeedItems}
+                groupMembers={groupData.userMap}
+              />
+            )}
           </div>
         </div>
 
         {/* Right gutter */}
-        <div className="w-56 p-4 shadow-xl lg:h-auto lg:w-1/4 lg:flex-none">
-          <Members />
+        <div className="w-full rounded-lg bg-accent p-4 lg:w-1/4 lg:flex-none">
+          <Suspense fallback={<div>Loading...</div>}>
+            <GroupInfoPanel />
+          </Suspense>
         </div>
       </div>
     </div>
