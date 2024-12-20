@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 
 export const themes = [
   {
@@ -883,26 +883,26 @@ export const ThemeSwitch = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground p-8">
-      <h1 className="text-3xl font-bold mb-4">Dynamic Theme Switcher</h1>
+    <div className="min-h-screen bg-background p-8 text-foreground">
+      <h1 className="mb-4 font-bold text-3xl">Dynamic Theme Switcher</h1>
       <p className="mb-4">
         Current primary color: <span className="font-mono">{primaryColor}</span>
       </p>
       <div className="flex gap-4">
         <button
-          className="bg-primary text-primary-foreground px-4 py-2 rounded-lg"
+          className="rounded-lg bg-primary px-4 py-2 text-primary-foreground"
           onClick={() => handleColorChange("240 100% 50%")} // Blue
         >
           Blue
         </button>
         <button
-          className="bg-primary text-primary-foreground px-4 py-2 rounded-lg"
+          className="rounded-lg bg-primary px-4 py-2 text-primary-foreground"
           onClick={() => handleColorChange("0 100% 50%")} // Red
         >
           Red
         </button>
         <button
-          className="bg-primary text-primary-foreground px-4 py-2 rounded-lg"
+          className="rounded-lg bg-primary px-4 py-2 text-primary-foreground"
           onClick={() => handleColorChange("120 100% 50%")} // Green
         >
           Green

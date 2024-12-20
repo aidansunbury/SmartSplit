@@ -1,11 +1,11 @@
 "use client";
 
+import { PencilLine } from "lucide-react";
 import type React from "react";
 import { formatCurrency } from "~/lib/currencyFormat";
-import { api } from "~/trpc/react";
-import { PencilLine } from "lucide-react";
-import { DeleteFeedItemDialog } from "./DeleteFeedItemDialog";
 import type { RouterOutputs } from "~/server/api/root";
+import { api } from "~/trpc/react";
+import { DeleteFeedItemDialog } from "./DeleteFeedItemDialog";
 
 interface FeedSummaryProps {
   feedItem: RouterOutputs["feed"]["get"][0];
@@ -106,10 +106,10 @@ const FeedSummary: React.FC<FeedSummaryProps> = ({
 
   return (
     <div className="flex flex-col lg:flex-row-reverse">
-      <div className="lg:w-1/2 border relative">
+      <div className="relative border lg:w-1/2">
         {feedItem.notes}{" "}
         {isOwner && (
-          <div className="flex flex-row space-x-2 absolute right-2 top-2">
+          <div className="absolute top-2 right-2 flex flex-row space-x-2">
             <PencilLine size={20} />
             <DeleteFeedItemDialog
               itemType={isExpense ? "expense" : "payment"}

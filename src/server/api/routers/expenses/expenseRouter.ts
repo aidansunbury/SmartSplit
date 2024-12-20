@@ -1,15 +1,15 @@
 import { z } from "zod";
 
 import { TRPCError } from "@trpc/server";
-import { and, eq, type InferSelectModel } from "drizzle-orm";
+import { type InferSelectModel, and, eq } from "drizzle-orm";
 import { safeInsertSchema } from "~/lib/safeInsertSchema";
 import {
   createTRPCRouter,
   groupProcedure,
   protectedProcedure,
 } from "~/server/api/trpc";
-import { expenses, groups, usersToGroups } from "~/server/db/schema";
 import type { DB } from "~/server/db";
+import { expenses, groups, usersToGroups } from "~/server/db/schema";
 
 const expenseOwnerProcedure = protectedProcedure
   .input(z.object({ expenseId: z.string() }))

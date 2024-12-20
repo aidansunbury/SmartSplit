@@ -1,16 +1,16 @@
 "use client";
 import { useQueryState } from "nuqs";
 
-import { useState, useMemo } from "react";
+import { useDebounce } from "@uidotdev/usehooks";
+import fuzzysort from "fuzzysort";
+import { useMemo, useState } from "react";
 import { useToast } from "~/hooks/use-toast";
 import { api } from "~/trpc/react";
 import { AddExpense } from "./_components/AddExpense";
 import { AddPayment } from "./_components/AddPayment";
-import { Feed } from "./_components/feed/Feed";
 import { Members } from "./_components/Members";
 import SearchBar from "./_components/SearchBar";
-import fuzzysort from "fuzzysort";
-import { useDebounce } from "@uidotdev/usehooks";
+import { Feed } from "./_components/feed/Feed";
 
 // If the user is not a part of any groups, CTA to create or join
 export default function DashboardPage() {

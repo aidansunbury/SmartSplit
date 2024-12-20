@@ -11,15 +11,14 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Trash2 } from "lucide-react";
-import { Button } from "~/components/ui/button";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Trash2 } from "lucide-react";
+import { Button } from "~/components/ui/button";
 import { api } from "~/trpc/react";
-import { useState } from "react";
 
 import { useToast } from "~/hooks/use-toast";
 

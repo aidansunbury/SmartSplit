@@ -8,8 +8,8 @@ import {
 import { CircleDollarSign, HandCoins } from "lucide-react";
 import { formatCurrency } from "~/lib/currencyFormat";
 import { formatDate } from "~/lib/utils";
-import FeedSummary from "./FeedItem";
 import type { RouterOutputs } from "~/server/api/root";
+import FeedSummary from "./FeedItem";
 
 type Feed = RouterOutputs["feed"]["get"];
 interface FeedProps {
@@ -34,13 +34,13 @@ export const Feed: React.FC<FeedProps> = ({ filteredResult, groupMembers }) => {
                     <div className="text-gray-500 text-sm">
                       {formatDate(item.createdAt)}
                     </div>
-                    <span className="text-lg font-semibold text-left">
+                    <span className="text-left font-semibold text-lg">
                       {item.description}
                     </span>
                   </div>
                 </div>
 
-                <span className="text-sm text-right">
+                <span className="text-right text-sm">
                   {"userId" in item ? ( // Expense
                     <>
                       {groupMembers[item.userId]?.name} paid{" "}

@@ -1,14 +1,14 @@
 import { TRPCError } from "@trpc/server";
 import { and, eq, sql } from "drizzle-orm";
+import { z } from "zod";
 import { safeInsertSchema } from "~/lib/safeInsertSchema";
 import {
   createTRPCRouter,
   groupProcedure,
   protectedProcedure,
 } from "~/server/api/trpc";
-import { payments, usersToGroups } from "~/server/db/schema";
-import { z } from "zod";
 import type { DB } from "~/server/db";
+import { payments, usersToGroups } from "~/server/db/schema";
 
 const paymentOwnerProcedure = protectedProcedure
   .input(z.object({ paymentId: z.string() }))

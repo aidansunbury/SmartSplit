@@ -1,3 +1,4 @@
+import type { inferRouterOutputs } from "@trpc/server";
 import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
 import { protectedProcedure } from "~/server/api/trpc";
 import { balancesRouter } from "./routers/balances/balancesRouter";
@@ -5,7 +6,6 @@ import { expenseRouter } from "./routers/expenses/expenseRouter";
 import { feedRouter } from "./routers/feed/feedRouter";
 import { groupRouter } from "./routers/groups/groupRouter";
 import { paymentsRouter } from "./routers/payments/paymentsRouter";
-import type { inferRouterOutputs } from "@trpc/server";
 
 /**
  * This is the primary router for your server.
