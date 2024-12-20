@@ -9,10 +9,11 @@ import { CircleDollarSign, HandCoins } from "lucide-react";
 import { formatCurrency } from "~/lib/currencyFormat";
 import { formatDate } from "~/lib/utils";
 import FeedSummary from "./FeedItem";
-import type { FeedItem } from "../../page";
+import type { RouterOutputs } from "~/server/api/root";
 
+type Feed = RouterOutputs["feed"]["get"];
 interface FeedProps {
-  filteredResult: FeedItem[];
+  filteredResult: Feed;
   groupMembers: Record<string, Record<string, string>>;
 }
 export const Feed: React.FC<FeedProps> = ({ filteredResult, groupMembers }) => {

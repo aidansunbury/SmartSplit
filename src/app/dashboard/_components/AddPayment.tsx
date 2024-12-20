@@ -95,7 +95,8 @@ export function AddPayment() {
       });
       form.reset(defaultValues);
       setOpen(false);
-      utils.feed.get.invalidate();
+      utils.feed.get.invalidate({ groupId: group as string });
+      utils.group.get.invalidate({ groupId: group as string });
     },
     onError: (error) => {
       toast({

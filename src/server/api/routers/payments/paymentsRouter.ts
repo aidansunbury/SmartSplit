@@ -8,6 +8,7 @@ import {
 } from "~/server/api/trpc";
 import { payments, usersToGroups } from "~/server/db/schema";
 import { z } from "zod";
+import type { DB } from "~/server/db";
 
 const paymentOwnerProcedure = protectedProcedure
   .input(z.object({ paymentId: z.string() }))
@@ -35,8 +36,53 @@ const paymentOwnerProcedure = protectedProcedure
     });
   });
 
+const updateBalancesFromPayment = async ({
+  trx,
+  amount,
+  groupId,
+  balanceIncreaseUserId,
+  balanceDecreaseUserId,
+}: {
+  trx: DB;
+  amount: number;
+  groupId: string;
+  balanceIncreaseUserId: string;
+  balanceDecreaseUserId: string;
+}) => {
+  const increaseBalancePromise = trx
+    .update(usersToGroups)
+    .set({
+      balance: sql`${usersToGroups.balance} + ${amount}`,
+    })
+    .where(
+      and(
+        eq(usersToGroups.groupId, groupId),
+        eq(usersToGroups.userId, balanceIncreaseUserId),
+      ),
+    )
+    .returning();
+
+  const decreaseBalancePromise = trx
+    .update(usersToGroups)
+    .set({
+      balance: sql`${usersToGroups.balance} - ${amount}`,
+    })
+    .where(
+      and(
+        eq(usersToGroups.groupId, groupId),
+        eq(usersToGroups.userId, balanceDecreaseUserId),
+      ),
+    )
+    .returning();
+
+  return [increaseBalancePromise, decreaseBalancePromise] as const;
+};
+
 export const paymentsRouter = createTRPCRouter({
   create: groupProcedure
+    .meta({
+      description: "Record a payment. You can only record your own payments.",
+    })
     .input(safeInsertSchema(payments).omit({ fromUserId: true }))
     .mutation(async ({ ctx, input }) => {
       const payment = await ctx.db.transaction(async (trx) => {
@@ -47,31 +93,14 @@ export const paymentsRouter = createTRPCRouter({
           .returning();
 
         // Update the balances
-        const updatedPayeeBalancePromise = trx
-          .update(usersToGroups)
-          .set({
-            balance: sql`${usersToGroups.balance} - ${input.amount}`,
-          })
-          .where(
-            and(
-              eq(usersToGroups.groupId, input.groupId),
-              eq(usersToGroups.userId, input.toUserId),
-            ),
-          )
-          .returning();
-
-        const updatedPayerBalancePromise = trx
-          .update(usersToGroups)
-          .set({
-            balance: sql`${usersToGroups.balance} + ${input.amount}`,
-          })
-          .where(
-            and(
-              eq(usersToGroups.groupId, input.groupId),
-              eq(usersToGroups.userId, ctx.session.user.id),
-            ),
-          )
-          .returning();
+        const [updatedPayeeBalancePromise, updatedPayerBalancePromise] =
+          await updateBalancesFromPayment({
+            trx,
+            amount: input.amount,
+            groupId: input.groupId,
+            balanceIncreaseUserId: ctx.session.user.id,
+            balanceDecreaseUserId: input.toUserId,
+          });
 
         const [[newPayment], _updatedPayeeBalance, _updatedPayerBalance] =
           await Promise.all([
@@ -89,34 +118,73 @@ export const paymentsRouter = createTRPCRouter({
       });
       return payment;
     }),
+  edit: paymentOwnerProcedure
+    .meta({
+      description:
+        "Edit a payment. Only the creator of a payment can edit it. The payment group and recipient can not be changed.",
+    })
+    .input(
+      safeInsertSchema(payments)
+        .omit({ fromUserId: true, groupId: true, toUserId: true })
+        .partial(),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const payment = await ctx.db.transaction(async (trx) => {
+        // Update the payment
+        const updatedPaymentPromise = trx
+          .update(payments)
+          .set(input)
+          .where(
+            and(
+              eq(payments.id, ctx.payment.id),
+              eq(payments.fromUserId, ctx.session.user.id),
+            ),
+          )
+          .returning();
+        if (input.amount !== undefined && input.amount !== ctx.payment.amount) {
+          const difference = input.amount - ctx.payment.amount;
+
+          const [increaseBalancePromise, decreaseBalancePromise] =
+            difference > 0
+              ? await updateBalancesFromPayment({
+                  trx,
+                  amount: difference,
+                  groupId: ctx.payment.groupId,
+                  balanceIncreaseUserId: ctx.payment.fromUserId,
+                  balanceDecreaseUserId: ctx.payment.toUserId,
+                })
+              : await updateBalancesFromPayment({
+                  trx,
+                  amount: -difference,
+                  groupId: ctx.payment.groupId,
+                  balanceIncreaseUserId: ctx.payment.toUserId,
+                  balanceDecreaseUserId: ctx.payment.fromUserId,
+                });
+          await Promise.all([increaseBalancePromise, decreaseBalancePromise]);
+        }
+
+        const [updatedPayment] = await updatedPaymentPromise;
+        if (!updatedPayment) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to update payment",
+          });
+        }
+        return updatedPayment;
+      });
+      return payment;
+    }),
   delete: paymentOwnerProcedure.mutation(async ({ ctx, input }) => {
     const payment = await ctx.db.transaction(async (trx) => {
       // Update the balances
-      const updatedPayeeBalancePromise = trx
-        .update(usersToGroups)
-        .set({
-          balance: sql`${usersToGroups.balance} + ${ctx.payment.amount}`,
-        })
-        .where(
-          and(
-            eq(usersToGroups.groupId, ctx.payment.groupId),
-            eq(usersToGroups.userId, ctx.payment.toUserId),
-          ),
-        )
-        .returning();
-
-      const updatedPayerBalancePromise = trx
-        .update(usersToGroups)
-        .set({
-          balance: sql`${usersToGroups.balance} - ${ctx.payment.amount}`,
-        })
-        .where(
-          and(
-            eq(usersToGroups.groupId, ctx.payment.groupId),
-            eq(usersToGroups.userId, ctx.payment.fromUserId),
-          ),
-        )
-        .returning();
+      const [updatedPayeeBalancePromise, updatedPayerBalancePromise] =
+        await updateBalancesFromPayment({
+          trx,
+          amount: ctx.payment.amount,
+          groupId: ctx.payment.groupId,
+          balanceIncreaseUserId: ctx.payment.toUserId,
+          balanceDecreaseUserId: ctx.payment.fromUserId,
+        });
 
       // Delete the payment
       const deletedPaymentPromise = trx

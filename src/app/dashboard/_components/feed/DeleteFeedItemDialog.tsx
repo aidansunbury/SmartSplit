@@ -1,3 +1,5 @@
+"use client";
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,8 +18,36 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { api } from "~/trpc/react";
+import { useState } from "react";
 
-export const DeleteFeedItemDialog = () => {
+import { useToast } from "~/hooks/use-toast";
+
+export const DeleteFeedItemDialog = ({
+  itemType,
+  itemId,
+  itemDescription,
+}: {
+  itemType: "expense" | "payment";
+  itemId: string;
+  itemDescription: string;
+}) => {
+  const { toast } = useToast();
+  const utils = api.useUtils();
+  const onSuccess = () => {
+    utils.feed.invalidate();
+    utils.group.get.invalidate();
+    toast({
+      title: `${itemDescription} ${itemType} deleted successfully`,
+    });
+  };
+  const { mutate: deleteExpense } = api.expense.delete.useMutation({
+    onSuccess,
+  });
+  const { mutate: deletePayment } = api.payments.delete.useMutation({
+    onSuccess,
+  });
+
   return (
     <AlertDialog>
       <Tooltip>
@@ -29,21 +59,36 @@ export const DeleteFeedItemDialog = () => {
           </AlertDialogTrigger>
         </TooltipTrigger>
         <TooltipContent>
-          <p>Delete Expense</p>
+          <p>Delete {itemType}</p>
         </TooltipContent>
       </Tooltip>
 
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+          <AlertDialogTitle>
+            Are you sure you want to delete{" "}
+            <span className="italic">{itemDescription}?</span>
+          </AlertDialogTitle>
           <AlertDialogDescription>
-            This action cannot be undone. This will permanently delete your
-            account and remove your data from our servers.
+            This action can not be undone. Group balances will be recalculated
+            as if {itemType} was never created.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction>Continue</AlertDialogAction>
+          <AlertDialogAction
+            onClick={() => {
+              if (itemType === "expense") {
+                deleteExpense({ expenseId: itemId });
+              } else {
+                deletePayment({ paymentId: itemId });
+              }
+            }}
+            variant={"destructive"}
+          >
+            <Trash2 className="mr-2" />
+            Delete
+          </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

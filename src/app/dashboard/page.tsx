@@ -12,27 +12,6 @@ import SearchBar from "./_components/SearchBar";
 import fuzzysort from "fuzzysort";
 import { useDebounce } from "@uidotdev/usehooks";
 
-export type FeedItem =
-  | {
-      id: string;
-      description: string | null;
-      userId: string;
-      groupId: string;
-      amount: number;
-      notes: string | null;
-      createdAt: number;
-    }
-  | {
-      id: string;
-      description: string | null;
-      groupId: string;
-      amount: number;
-      notes: string | null;
-      createdAt: number;
-      fromUserId: string;
-      toUserId: string;
-    };
-
 // If the user is not a part of any groups, CTA to create or join
 export default function DashboardPage() {
   const [group, _setGroup] = useQueryState("group");

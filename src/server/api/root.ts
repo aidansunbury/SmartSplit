@@ -5,6 +5,7 @@ import { expenseRouter } from "./routers/expenses/expenseRouter";
 import { feedRouter } from "./routers/feed/feedRouter";
 import { groupRouter } from "./routers/groups/groupRouter";
 import { paymentsRouter } from "./routers/payments/paymentsRouter";
+import type { inferRouterOutputs } from "@trpc/server";
 
 /**
  * This is the primary router for your server.
@@ -24,6 +25,7 @@ export const appRouter = createTRPCRouter({
 
 // export type definition of API
 export type AppRouter = typeof appRouter;
+export type RouterOutputs = inferRouterOutputs<AppRouter>;
 
 /**
  * Create a server-side caller for the tRPC API.

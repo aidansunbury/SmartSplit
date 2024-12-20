@@ -147,13 +147,14 @@ export const groupRouter = createTRPCRouter({
       });
       return myGroups;
     }),
-  refreshJoinCode: groupProcedure.mutation(async ({ ctx }) => {
+  refreshJoinCode: groupProcedure.mutation(async ({ ctx, input }) => {
     const newCode = crypto.randomUUID();
     const [group] = await ctx.db
       .update(groups)
       .set({
         joinCode: newCode,
       })
+      .where(eq(groups.id, input.groupId))
       .returning();
     if (!group) {
       throw new TRPCError({

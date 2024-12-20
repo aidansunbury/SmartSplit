@@ -73,6 +73,7 @@ export function AddExpense() {
       });
       form.reset(defaultValues);
       utils.feed.get.invalidate({ groupId: group as string });
+      utils.group.get.invalidate({ groupId: group as string });
       setOpen(false);
     },
     onError: (error) => {

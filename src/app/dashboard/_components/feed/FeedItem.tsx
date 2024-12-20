@@ -2,14 +2,13 @@
 
 import type React from "react";
 import { formatCurrency } from "~/lib/currencyFormat";
-import type { FeedItem } from "./page";
 import { api } from "~/trpc/react";
-import { PencilLine, Trash2 } from "lucide-react";
+import { PencilLine } from "lucide-react";
 import { DeleteFeedItemDialog } from "./DeleteFeedItemDialog";
+import type { RouterOutputs } from "~/server/api/root";
 
-// Define the props type, including feedItem and groupMembers
 interface FeedSummaryProps {
-  feedItem: FeedItem;
+  feedItem: RouterOutputs["feed"]["get"][0];
   groupMembers: Record<string, Record<string, string>>;
 }
 
@@ -52,9 +51,7 @@ const FeedSummary: React.FC<FeedSummaryProps> = ({
   if ("userId" in feedItem) {
     payerObj = groupMembers[feedItem.userId];
     isExpense = true;
-    evenSplit = Number(
-      (feedItem.amount / Object.keys(groupMembers).length).toFixed(2),
-    );
+    evenSplit = Math.floor(feedItem.amount / Object.keys(groupMembers).length);
     isOwner = feedItem.userId === me?.id;
   } else if ("fromUserId" in feedItem && "toUserId" in feedItem) {
     payerObj = groupMembers[feedItem.fromUserId];
@@ -70,8 +67,8 @@ const FeedSummary: React.FC<FeedSummaryProps> = ({
           <UserDisplay
             name={payerObj?.name}
             image={payerObj?.image}
-            verb="paid"
-            amount={feedItem.amount}
+            verb="lent"
+            amount={evenSplit * (Object.keys(groupMembers).length - 1)}
           />
           {groupMembers &&
             Object.keys(groupMembers).map(
@@ -113,8 +110,12 @@ const FeedSummary: React.FC<FeedSummaryProps> = ({
         {feedItem.notes}{" "}
         {isOwner && (
           <div className="flex flex-row space-x-2 absolute right-2 top-2">
-            <DeleteFeedItemDialog />
             <PencilLine size={20} />
+            <DeleteFeedItemDialog
+              itemType={isExpense ? "expense" : "payment"}
+              itemDescription={feedItem.description}
+              itemId={feedItem.id}
+            />
           </div>
         )}
       </div>
