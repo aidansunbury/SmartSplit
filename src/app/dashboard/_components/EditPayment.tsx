@@ -1,5 +1,6 @@
 "use client";
 
+import { Calendar } from "@/components/ui/calendar";
 import {
   Dialog,
   DialogContent,
@@ -52,9 +53,18 @@ import {
 } from "@/components/ui/tooltip";
 import type { payments } from "@/server/db/schema";
 import type { InferSelectModel } from "drizzle-orm";
-import { DollarSign, PencilLine, Undo2 } from "lucide-react";
+import { CalendarIcon, DollarSign, PencilLine, Undo2 } from "lucide-react";
 import { useQueryState } from "nuqs";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
+import { dateValidator } from "~/lib/dateValidator";
+import { cn } from "~/lib/utils";
+
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { format } from "date-fns";
 import { formatCurrency } from "~/lib/currencyFormat";
 import { currencyValidator } from "~/lib/currencyValidator";
 import { updatePaymentValidator } from "~/server/api/routers/payments/paymentValidators";
@@ -68,16 +78,17 @@ export function EditPayment({
     groupId: group as string,
   });
 
-  // Todo omit the recipient, as that can not be changed at the moment
   const formValidator = updatePaymentValidator.extend({
     amount: currencyValidator,
+    date: dateValidator,
   });
 
   type FormType = z.infer<typeof formValidator>;
 
   const defaultValues = {
     ...payment,
-    amount: `${(payment.amount / 100).toString()}` as unknown as number,
+    date: new Date(payment.date * 1000),
+    amount: `${(payment.amount / 100).toFixed(2)}` as unknown as number,
   };
   const { toast } = useToast();
   const form = useForm<FormType>({
@@ -87,15 +98,9 @@ export function EditPayment({
   const { control, handleSubmit, formState } = form;
   const utils = api.useUtils();
   const { mutate, isPending } = api.payments.edit.useMutation({
-    onSuccess: (data) => {
+    onSuccess: () => {
       toast({
-        title: "Form Submitted",
-        description: (
-          <div className="w-80">
-            <h1>Returned:</h1>
-            <pre>{JSON.stringify(data, null, 2)}</pre>
-          </div>
-        ),
+        title: "Payment Updated",
       });
       form.reset(defaultValues);
       setOpen(false);
@@ -254,7 +259,52 @@ export function EditPayment({
                   </FormItem>
                 )}
               />
-
+              <FormField
+                control={form.control}
+                name="date"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel optional={false}>Date</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant={"outline"}
+                            className={cn(
+                              "w-full pl-3 text-left font-normal",
+                              !field.value && "text-muted-foreground",
+                            )}
+                          >
+                            {field.value ? (
+                              format(field.value, "PPP")
+                            ) : (
+                              <span>Expense date</span>
+                            )}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent
+                        className="w-auto p-0"
+                        align="center"
+                        side="bottom"
+                      >
+                        <Calendar
+                          mode="single"
+                          // @ts-ignore The zod coercion into a number only happens on validation, so field.value is a Date object
+                          selected={field.value}
+                          onSelect={field.onChange}
+                          disabled={(date) =>
+                            date > new Date() || date < new Date("1900-01-01")
+                          }
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <FormField
                 control={form.control}
                 name="paymentMethod"

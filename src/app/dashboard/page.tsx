@@ -1,10 +1,12 @@
 "use client";
 import { useQueryState } from "nuqs";
 
+import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useDebounce } from "@uidotdev/usehooks";
 import fuzzysort from "fuzzysort";
 import { useMemo, useState } from "react";
 import { Suspense } from "react";
+import { ModeToggle } from "~/components/theme-toggle";
 import { useToast } from "~/hooks/use-toast";
 import { api } from "~/trpc/react";
 import { AddExpense } from "./_components/AddExpense";
@@ -72,7 +74,14 @@ export default function DashboardPage() {
 
   return (
     <div>
-      <h1 className="font-bold text-2xl xl:pl-16">{groupData.name}</h1>
+      <header className="flex h-16 shrink-0 items-center gap-2">
+        <div className="flex w-full items-center gap-2 px-4">
+          <SidebarTrigger className="-ml-1" />
+          <h1 className="mr-auto ml-4 font-bold text-3xl">{groupData.name}</h1>
+
+          <ModeToggle />
+        </div>
+      </header>
       <div className="my-2 flex flex-col-reverse justify-center overflow-hidden lg:flex-row lg:space-x-2">
         {/* Main content area */}
         <div className="w-full rounded-b-lg bg-accent p-4 lg:max-w-[600px] lg:rounded-lg">

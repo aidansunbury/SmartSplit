@@ -4,6 +4,8 @@ import { getServerAuthSession } from "~/server/auth";
 import { HydrateClient } from "~/trpc/server";
 
 import { BarChart2, CreditCard, Receipt, Users } from "lucide-react";
+import { Handshake } from "lucide-react";
+import Image from "next/image";
 import { SignInButton } from "~/components/SigninButton";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
@@ -15,7 +17,18 @@ export default async function Home() {
     <HydrateClient>
       <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
         <header className="container mx-auto px-4 py-8">
-          <h1 className="font-bold text-4xl text-gray-900">Smart Split</h1>
+          <h1 className="flex flex-row items-center font-bold text-4xl text-gray-900">
+            <Handshake size={36} className="mr-1" />
+            <span>Smart Split</span>
+            <Link
+              href="https://github.com/aidansunbury/SmartSplit"
+              className="ml-auto"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Image src="/github.svg" alt="Github" width={36} height={36} />
+            </Link>
+          </h1>
         </header>
 
         <main className="container mx-auto px-4">

@@ -19,15 +19,16 @@ export function SettingsDialog() {
       <DialogContent>
         <Tabs
           defaultValue="invite"
-          className="w-[400px]"
-          value={settings}
+          value={settings ?? undefined}
           onValueChange={onTabChange}
         >
-          <TabsList>
+          <TabsList className="mt-3">
             <TabsTrigger value="invite">Invite</TabsTrigger>
+
             <TabsTrigger value="general">Settings</TabsTrigger>
           </TabsList>
           <TabsContent value="invite">
+            <h1 className="mb-2 font-bold text-2xl">Invite Group Members</h1>
             Make changes to your account here.
           </TabsContent>
           <TabsContent value="general">Change your password here.</TabsContent>

@@ -10,6 +10,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { format } from "date-fns";
+
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { useBeforeunload } from "react-beforeunload";
@@ -38,8 +40,14 @@ import {
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Check, ChevronsUpDown, CircleDollarSign } from "lucide-react";
+import {
+  CalendarIcon,
+  Check,
+  ChevronsUpDown,
+  CircleDollarSign,
+} from "lucide-react";
 import type { z } from "zod";
+import { dateValidator } from "~/lib/dateValidator";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { DollarSign } from "lucide-react";
@@ -52,10 +60,12 @@ import {
 import { currencyValidator } from "~/lib/currencyValidator";
 import { createExpenseValidator } from "~/server/api/routers/expenses/expenseValidators";
 
+import { Calendar } from "@/components/ui/calendar";
 import {
   CategoryIconMap,
   CategoryKeywordMap,
 } from "~/components/ExpenseCategoryIcons";
+import { formatCurrency } from "~/lib/currencyFormat";
 import { cn } from "~/lib/utils";
 import { expenseCategories } from "~/server/db/schema";
 import { api } from "~/trpc/react";
@@ -68,9 +78,11 @@ const categories = expenseCategories.enumValues.map((category) => ({
 export function AddExpense() {
   const [group] = useQueryState("group");
   const [isOpen, setOpen] = useState<boolean>(false);
+  const [closeOnSubmit, setCloseOnSubmit] = useState<boolean>(true);
 
   const formValidator = createExpenseValidator.extend({
     amount: currencyValidator,
+    date: dateValidator,
   });
   type FormType = z.infer<typeof formValidator>;
 
@@ -80,6 +92,8 @@ export function AddExpense() {
     description: "",
     notes: "",
     category: null,
+    // @ts-ignore The date object is transformed upon validation
+    date: new Date(),
   };
 
   const { toast } = useToast();
@@ -91,15 +105,15 @@ export function AddExpense() {
   const { control, handleSubmit, formState } = form;
   const utils = api.useUtils();
   const { mutate, isPending } = api.expense.create.useMutation({
-    onSuccess: () => {
+    onSuccess: (data) => {
       toast({
-        title: "Expense created successfully",
-        description: "Your expense has been added to the group",
+        title: "Expense Created Successfully",
+        description: `Your spent ${formatCurrency(data.amount)} on ${data.description}`,
       });
       form.reset(defaultValues);
       utils.feed.get.invalidate({ groupId: group as string });
       utils.group.get.invalidate({ groupId: group as string });
-      setOpen(false);
+      setOpen(!closeOnSubmit);
     },
     onError: (error) => {
       toast({
@@ -135,7 +149,6 @@ export function AddExpense() {
       </DialogTrigger>
 
       <DialogContent
-        className="sm:max-w-[425px]"
         onInteractOutside={(e) => {
           if (formState.isDirty) {
             e.preventDefault();
@@ -211,6 +224,52 @@ export function AddExpense() {
                       </div>
                     </div>
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="date"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel optional={false}>Date </FormLabel>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant={"outline"}
+                          className={cn(
+                            "w-full pl-3 text-left font-normal",
+                            !field.value && "text-muted-foreground",
+                          )}
+                        >
+                          {field.value ? (
+                            format(field.value, "PPP")
+                          ) : (
+                            <span>Expense date</span>
+                          )}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent
+                      className="w-auto p-0"
+                      align="center"
+                      side="bottom"
+                    >
+                      <Calendar
+                        mode="single"
+                        // @ts-ignore The zod coercion into a number only happens on validation, so field.value is a Date object
+                        selected={field.value}
+                        onSelect={field.onChange}
+                        disabled={(date) =>
+                          date > new Date() || date < new Date("1900-01-01")
+                        }
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
                   <FormMessage />
                 </FormItem>
               )}
@@ -312,30 +371,43 @@ export function AddExpense() {
               )}
             />
 
-            <DialogFooter className="mt-4 flex flex-row justify-between sm:justify-between">
-              <Button
-                type="button"
-                onClick={() => form.reset(defaultValues)}
-                variant={"destructive"}
-              >
-                Reset
-              </Button>
-              <div className="space-x-2">
+            <DialogFooter className="mt-4 flex flex-row items-center justify-end space-x-2">
+              <div className="mr-auto space-x-2">
+                <Button
+                  type="button"
+                  onClick={() => form.reset(defaultValues)}
+                  variant="destructive"
+                >
+                  Reset
+                </Button>
                 <Button
                   type="button"
                   onClick={() => {
                     setOpen(false);
                     form.reset(defaultValues);
                   }}
-                  variant={"ghost"}
+                  variant="ghost"
                 >
                   Cancel
                 </Button>
-
-                <Button type="submit" disabled={isPending} loading={isPending}>
-                  Create Expense
-                </Button>
               </div>
+
+              <Button
+                type="submit"
+                disabled={isPending}
+                loading={isPending && closeOnSubmit}
+                onClick={() => setCloseOnSubmit(true)}
+              >
+                Create
+              </Button>
+              <Button
+                type="submit"
+                disabled={isPending}
+                loading={isPending && !closeOnSubmit}
+                onClick={() => setCloseOnSubmit(false)}
+              >
+                Create Another
+              </Button>
             </DialogFooter>
           </form>
         </Form>

@@ -6,8 +6,11 @@ import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
+  SidebarHeader,
   SidebarRail,
 } from "@/components/ui/sidebar";
+import { Handshake } from "lucide-react";
+import Link from "next/link";
 import { NavUser } from "~/components/sidebar/nav-user";
 import { SidebarGroups } from "./nav-groups";
 
@@ -17,14 +20,19 @@ export type UserAvatar = {
   image?: string;
 };
 
-// TODO include join group and create group in sidebar
 export function AppSidebar({
   user,
   ...props
 }: React.ComponentProps<typeof Sidebar> & { user: UserAvatar }) {
   return (
     <Sidebar variant="inset" {...props}>
-      {/* <SidebarHeader><TeamSwitcher teams={data.teams} /></SidebarHeader> */}
+      <SidebarHeader>
+        <Link href={"/"} className="flex flex-row">
+          {" "}
+          <Handshake size={28} className="mr-1" />
+          <h1 className="items-center font-bold text-2xl">Smart Split</h1>
+        </Link>
+      </SidebarHeader>
       <SidebarContent>
         <SidebarGroups />
       </SidebarContent>

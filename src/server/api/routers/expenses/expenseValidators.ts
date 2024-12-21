@@ -4,6 +4,7 @@ import { expenses } from "~/server/db/schema";
 const baseExpenseValidator = createInsertSchema(expenses, {
   amount: (schema) => schema.int().positive(),
   description: (schema) => schema.min(1),
+  date: (schema) => schema.int().positive(),
 }).omit({
   createdAt: true,
   userId: true,

@@ -4,6 +4,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -12,6 +13,7 @@ import { useState } from "react";
 import { useBeforeunload } from "react-beforeunload";
 
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
 import { PaymentMethodIconMap } from "~/components/BrandIcons";
 
@@ -43,19 +45,30 @@ import {
 
 import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
-import type { z } from "zod";
+import { z } from "zod";
 
-import { DollarSign, HandCoins } from "lucide-react";
+import { CalendarIcon, DollarSign, HandCoins } from "lucide-react";
 import { useQueryState } from "nuqs";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { formatCurrency } from "~/lib/currencyFormat";
 import { currencyValidator } from "~/lib/currencyValidator";
+import { dateValidator } from "~/lib/dateValidator";
 import { getFormattedDate } from "~/lib/utils";
+import { cn } from "~/lib/utils";
 import { createPaymentValidator } from "~/server/api/routers/payments/paymentValidators";
 
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { format } from "date-fns";
+
 export function AddPayment() {
-  const [isOpen, setOpen] = useState<boolean>(false);
   const [group] = useQueryState("group");
+  const [isOpen, setOpen] = useState<boolean>(false);
+  const [closeOnSubmit, setCloseOnSubmit] = useState<boolean>(true);
+
   const { data: user } = api.me.useQuery();
   const { data: groupMembers } = api.group.get.useQuery({
     groupId: group as string,
@@ -63,6 +76,11 @@ export function AddPayment() {
 
   const formValidator = createPaymentValidator.extend({
     amount: currencyValidator,
+    date: dateValidator,
+    toUserId: z.string().min(1, {
+      message: "Payment Recipient is required",
+    }),
+    paymentMethod: z.string().transform((val) => (val === "" ? null : val)),
   });
 
   type FormType = z.infer<typeof formValidator>;
@@ -73,7 +91,10 @@ export function AddPayment() {
     groupId: group as string,
     toUserId: "",
     notes: "",
-    paymentMethod: undefined,
+    // @ts-ignore The paymentMethod is optional
+    paymentMethod: "",
+    // @ts-ignore The date object is transformed upon validation
+    date: new Date(),
   };
 
   const { toast } = useToast();
@@ -86,22 +107,17 @@ export function AddPayment() {
   const { mutate, isPending } = api.payments.create.useMutation({
     onSuccess: (data) => {
       toast({
-        title: "Form Submitted",
-        description: (
-          <div className="w-80">
-            <h1>Returned:</h1>
-            <pre>{JSON.stringify(data, null, 2)}</pre>
-          </div>
-        ),
+        title: "Payment Created Successfully",
+        description: `Your payed ${groupMembers?.userMap.get(data.toUserId)?.name} ${formatCurrency(data.amount)} ${data.paymentMethod ? `with ${data.paymentMethod}` : ""}`,
       });
       form.reset(defaultValues);
-      setOpen(false);
       utils.feed.get.invalidate({ groupId: group as string });
       utils.group.get.invalidate({ groupId: group as string });
+      setOpen(!closeOnSubmit);
     },
     onError: (error) => {
       toast({
-        title: error.data?.code ?? "Error",
+        title: error.data?.code ?? "Failed to create payment",
         description: error.message,
       });
     },
@@ -167,7 +183,6 @@ export function AddPayment() {
                 )}
               />
 
-              {/* // TODO: When a user is selected, it should auto fill the amount that they are owed */}
               <FormField
                 control={form.control}
                 name="toUserId"
@@ -178,15 +193,16 @@ export function AddPayment() {
                       value={field.value}
                       onValueChange={(value) => {
                         if (!formState.dirtyFields.amount) {
-                          const owed = Math.floor(
+                          const owed =
                             (groupMembers?.users.find(
                               (member) => member.user.id === value,
-                            )?.balance ?? defaultValues.amount) / 100,
-                          );
+                            )?.balance ?? defaultValues.amount) / 100;
                           form.setValue(
                             "amount",
                             // @ts-ignore - value is later coerced to a number, but input "expects" a string
-                            String(owed > 0 ? owed : defaultValues.amount),
+                            owed > 0
+                              ? owed.toFixed(2)
+                              : defaultValues.amount.toFixed(2),
                           );
                         }
                         field.onChange(value);
@@ -269,17 +285,59 @@ export function AddPayment() {
                   </FormItem>
                 )}
               />
-
+              <FormField
+                control={form.control}
+                name="date"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel optional={false}>Date</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant={"outline"}
+                            className={cn(
+                              "w-full pl-3 text-left font-normal",
+                              !field.value && "text-muted-foreground",
+                            )}
+                          >
+                            {field.value ? (
+                              format(field.value, "PPP")
+                            ) : (
+                              <span>Expense date</span>
+                            )}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent
+                        className="w-auto p-0"
+                        align="center"
+                        side="bottom"
+                      >
+                        <Calendar
+                          mode="single"
+                          // @ts-ignore The zod coercion into a number only happens on validation, so field.value is a Date object
+                          selected={field.value}
+                          onSelect={field.onChange}
+                          disabled={(date) =>
+                            date > new Date() || date < new Date("1900-01-01")
+                          }
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <FormField
                 control={form.control}
                 name="paymentMethod"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Payment Method</FormLabel>
-                    <Select
-                      value={field.value ?? undefined}
-                      onValueChange={field.onChange}
-                    >
+                    <Select value={field.value} onValueChange={field.onChange}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select A Payment Method" />
@@ -323,36 +381,44 @@ export function AddPayment() {
                   </FormItem>
                 )}
               />
-
-              <div className="mt-4 flex flex-row justify-between">
-                <Button
-                  type="button"
-                  onClick={() => form.reset(defaultValues)}
-                  variant={"destructive"}
-                >
-                  Reset
-                </Button>
-                <div className="space-x-2">
+              <DialogFooter className="mt-4 flex flex-row items-center justify-end space-x-2">
+                <div className="mr-auto space-x-2">
+                  <Button
+                    type="button"
+                    onClick={() => form.reset(defaultValues)}
+                    variant="destructive"
+                  >
+                    Reset
+                  </Button>
                   <Button
                     type="button"
                     onClick={() => {
                       setOpen(false);
                       form.reset(defaultValues);
                     }}
-                    variant={"ghost"}
+                    variant="ghost"
                   >
                     Cancel
                   </Button>
-
-                  <Button
-                    type="submit"
-                    disabled={isPending}
-                    loading={isPending}
-                  >
-                    Submit
-                  </Button>
                 </div>
-              </div>
+
+                <Button
+                  type="submit"
+                  disabled={isPending}
+                  loading={isPending && closeOnSubmit}
+                  onClick={() => setCloseOnSubmit(true)}
+                >
+                  Create
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isPending}
+                  loading={isPending && !closeOnSubmit}
+                  onClick={() => setCloseOnSubmit(false)}
+                >
+                  Create Another
+                </Button>
+              </DialogFooter>
             </form>
           </Form>
         </div>

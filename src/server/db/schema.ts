@@ -15,6 +15,8 @@ import {
 import type { AdapterAccount } from "next-auth/adapters";
 import { ulid } from "ulid";
 
+// All dates are stored as integers representing the number of seconds since the Unix epoch
+
 const createPrefixedUlid = (prefix: string) => {
   return `${prefix}_${ulid()}`;
 };
@@ -132,6 +134,8 @@ export const expenses = createTable(
     // Positive integer in cents
     amount: integer("amount").notNull(),
     description: text("description").notNull(),
+    // User supplied date of expense. Must be explicity set by user, but will be auto filled by the client
+    date: integer("date").notNull(),
     category: expenseCategories("category"),
     notes: text("notes"),
     groupId: varchar("groupId", { length: 255 })
@@ -141,12 +145,14 @@ export const expenses = createTable(
     userId: varchar("userId", { length: 255 })
       .notNull()
       .references(() => users.id),
+    // Database generated timestamp
     createdAt: integer("createdAt")
       .notNull()
       .default(sql`extract(epoch from now())`),
   },
   (t) => ({
     groupIdx: index("expenses_group_idx").on(t.groupId),
+    dateIdx: index("expenses_date_idx").on(t.date),
     createdAtIdx: index("expenses_created_at_idx").on(t.createdAt),
     positiveAmountCheck: check(
       "expenses_positive_amount_check",
@@ -181,6 +187,8 @@ export const payments = createTable(
     notes: text("notes"),
     paymentMethod: paymentMethods("paymentMethods"),
     amount: integer("amount").notNull(),
+    // User supplied date of payment. Must be explicity set by user, but will be auto filled on the frontend
+    date: integer("date").notNull(),
     fromUserId: varchar("fromUserId", { length: 255 })
       .notNull()
       .references(() => users.id),
@@ -197,6 +205,7 @@ export const payments = createTable(
   (t) => ({
     groupIdx: index("payments_group_idx").on(t.groupId),
     createdAtIdx: index("payments_created_at_idx").on(t.createdAt),
+    dateIdx: index("payments_date_idx").on(t.date),
     positiveAmountCheck: check(
       "payments_positive_amount_check",
       sql`${t.amount} > 0`,

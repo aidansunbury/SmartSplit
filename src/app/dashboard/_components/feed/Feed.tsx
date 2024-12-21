@@ -17,6 +17,7 @@ import { formatCurrency } from "~/lib/currencyFormat";
 import { formatDate } from "~/lib/utils";
 import type { RouterOutputs } from "~/server/api/root";
 import type { GroupMemberMap } from "~/server/api/routers/groups/groupRouter";
+import { api } from "~/trpc/react";
 import { FeedItem } from "./FeedItem";
 
 type Feed = RouterOutputs["feed"]["get"];
@@ -51,7 +52,19 @@ function RenderIcon({ item }: { item: Feed[number] }) {
   return <HandCoins size={40} />;
 }
 
+function renderName(
+  member: ReturnType<GroupMemberMap["get"]>,
+  me: string | undefined,
+) {
+  if (!member || !me) return null;
+  if (member.id === me) {
+    return "You";
+  }
+  return member.name;
+}
 export const Feed: React.FC<FeedProps> = ({ filteredResult, groupMembers }) => {
+  const { data: me } = api.me.useQuery();
+
   return (
     <div>
       <Accordion type="multiple">
@@ -65,7 +78,7 @@ export const Feed: React.FC<FeedProps> = ({ filteredResult, groupMembers }) => {
                   </div>
                   <div className="flex flex-col items-start space-y-2">
                     <div className="text-gray-500 text-sm">
-                      {formatDate(item.createdAt)}
+                      {formatDate(item.date)}
                     </div>
                     <span className="text-left font-semibold text-lg">
                       {item.description}
@@ -76,14 +89,14 @@ export const Feed: React.FC<FeedProps> = ({ filteredResult, groupMembers }) => {
                 <span className="text-right text-sm">
                   {"userId" in item ? ( // Expense
                     <>
-                      {groupMembers.get(item.userId)?.name} paid{" "}
+                      {renderName(groupMembers.get(item.userId), me?.id)} spent{" "}
                       {formatCurrency(item.amount)}
                     </>
                   ) : "toUserId" in item ? ( // Payment
                     <>
-                      {groupMembers.get(item.fromUserId)?.name} paid{" "}
-                      {formatCurrency(item.amount)} to{" "}
-                      {groupMembers.get(item.toUserId)?.name}
+                      {renderName(groupMembers.get(item.fromUserId), me?.id)}{" "}
+                      paid {renderName(groupMembers.get(item.toUserId), me?.id)}{" "}
+                      {formatCurrency(item.amount)}
                     </>
                   ) : null}
                 </span>

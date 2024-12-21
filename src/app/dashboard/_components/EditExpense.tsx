@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "~/lib/utils";
 
+import { Calendar } from "@/components/ui/calendar";
 import {
   Form,
   FormControl,
@@ -39,7 +40,14 @@ import {
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Check, ChevronsUpDown, PencilLine } from "lucide-react";
+import {
+  CalendarIcon,
+  Check,
+  ChevronsUpDown,
+  PencilLine,
+  Undo2,
+} from "lucide-react";
+
 import type { z } from "zod";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -58,8 +66,10 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { format } from "date-fns";
 import type { InferSelectModel } from "drizzle-orm";
 import { CategoryIconMap } from "~/components/ExpenseCategoryIcons";
+import { dateValidator } from "~/lib/dateValidator";
 import type { expenses } from "~/server/db/schema";
 import { expenseCategories } from "~/server/db/schema";
 import { api } from "~/trpc/react";
@@ -77,12 +87,14 @@ export function EditExpense({
 
   const formValidator = editExpenseValidator.extend({
     amount: currencyValidator,
+    date: dateValidator,
   });
   type FormType = z.infer<typeof formValidator>;
 
   const defaultValues: FormType = {
     ...expense,
-    amount: `${(expense.amount / 100).toString()}` as unknown as number,
+    date: new Date(expense.date * 1000),
+    amount: `${(expense.amount / 100).toFixed(2)}` as unknown as number,
   };
 
   const { toast } = useToast();
@@ -142,7 +154,6 @@ export function EditExpense({
       </Tooltip>
 
       <DialogContent
-        className="sm:max-w-[425px]"
         onInteractOutside={(e) => {
           if (formState.isDirty) {
             e.preventDefault();
@@ -163,7 +174,6 @@ export function EditExpense({
                 Add an expense to be shared with your group.
               </DialogDescription>
             </DialogHeader>
-
             <FormField
               control={control}
               name="description"
@@ -201,6 +211,52 @@ export function EditExpense({
                       </div>
                     </div>
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="date"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel optional={false}>Date </FormLabel>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant={"outline"}
+                          className={cn(
+                            "w-full pl-3 text-left font-normal",
+                            !field.value && "text-muted-foreground",
+                          )}
+                        >
+                          {field.value ? (
+                            format(field.value, "PPP")
+                          ) : (
+                            <span>Expense date</span>
+                          )}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent
+                      className="w-auto p-0"
+                      align="center"
+                      side="bottom"
+                    >
+                      <Calendar
+                        mode="single"
+                        // @ts-ignore The zod coercion into a number only happens on validation, so field.value is a Date object
+                        selected={field.value}
+                        onSelect={field.onChange}
+                        disabled={(date) =>
+                          date > new Date() || date < new Date("1900-01-01")
+                        }
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
                   <FormMessage />
                 </FormItem>
               )}
@@ -308,7 +364,8 @@ export function EditExpense({
                 onClick={() => form.reset(defaultValues)}
                 variant={"destructive"}
               >
-                Reset
+                <Undo2 className="mr-2" />
+                Discard Changes
               </Button>
               <div className="space-x-2">
                 <Button
@@ -323,7 +380,7 @@ export function EditExpense({
                 </Button>
 
                 <Button type="submit" disabled={isPending} loading={isPending}>
-                  Edit Expense
+                  Submit
                 </Button>
               </div>
             </DialogFooter>
