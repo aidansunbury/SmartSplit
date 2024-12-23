@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { TRPCError } from "@trpc/server";
-import { type InferSelectModel, and, eq, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import {
   createTRPCRouter,
   groupProcedure,
@@ -18,6 +18,7 @@ import {
   createExpenseValidator,
   editExpenseValidator,
 } from "./expenseValidators";
+import { Input } from "postcss";
 
 const expenseOwnerProcedure = protectedProcedure
   .input(z.object({ id: z.string() }))
@@ -45,20 +46,17 @@ const expenseOwnerProcedure = protectedProcedure
     });
   });
 
-//* dont need to fetch and check the users, because in order for the sql operation to work 1. it has to be a valid user id, 2. Their balance needs to be associated with the correct group, 3. they need to be active in said group
 const updateBalancesFromExpense = (
   trx: DB,
   {
     amount,
     groupId,
     creatorId,
-    // users,
     shares,
   }: {
     amount: number;
     creatorId: string;
     groupId: string;
-    // users: InferSelectModel<typeof usersToGroups>[];
     shares: ExpenseShare[];
   },
 ) => {
@@ -116,39 +114,11 @@ export const expenseRouter = createTRPCRouter({
           })
           .returning();
 
-        const groupUsers = await trx.query.groups.findFirst({
-          with: {
-            users: {
-              where: eq(usersToGroups.active, true),
-              orderBy: (usersToGroups, { asc }) => [asc(usersToGroups.userId)],
-            },
-          },
-        });
-
-        if (!groupUsers) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Group not found",
-          });
-        }
-
-        // If there is only one user in the group, don't modify the balances as there is no one to share the expense with
-        if (groupUsers.users.length < 2) {
-          const [awaitedExpense] = await newExpense;
-          if (!awaitedExpense) {
-            throw new TRPCError({
-              code: "INTERNAL_SERVER_ERROR",
-              message: "Failed to create expense",
-            });
-          }
-          return awaitedExpense;
-        }
-
         const balanceUpdates = updateBalancesFromExpense(trx, {
           amount: input.amount,
           creatorId: ctx.session.user.id,
           groupId: input.groupId,
-          users: groupUsers.users,
+          shares: input.shares,
         });
 
         const updatedBalances = await Promise.all(balanceUpdates);
@@ -164,6 +134,8 @@ export const expenseRouter = createTRPCRouter({
       });
       return newExpense;
     }),
+
+  //! These edit procedure is bricked, since it doesn't account for the existing shares. In order to make this easier without modifying the updateBalanceFromExpense, we just need to calculate the difference between what the currently saved share is, and what the new share should be and pass that difference into the function
   edit: expenseOwnerProcedure
     .input(editExpenseValidator)
     .mutation(async ({ input, ctx }) => {
@@ -221,27 +193,11 @@ export const expenseRouter = createTRPCRouter({
     }),
   delete: expenseOwnerProcedure.mutation(async ({ ctx }) => {
     const expense = await ctx.db.transaction(async (trx) => {
-      const groupUsers = await trx.query.groups.findFirst({
-        where: eq(groups.id, ctx.expense.groupId),
-        with: {
-          users: {
-            orderBy: (usersToGroups, { asc }) => [asc(usersToGroups.userId)],
-          },
-        },
-      });
-
-      if (!groupUsers) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Group not found",
-        });
-      }
-
       const balanceUpdates = updateBalancesFromExpense(trx, {
         amount: -ctx.expense.amount,
         creatorId: ctx.session.user.id,
         groupId: ctx.expense.groupId,
-        users: groupUsers.users,
+        shares: ctx.expense.shares,
       });
 
       const [deletedExpense] = await trx

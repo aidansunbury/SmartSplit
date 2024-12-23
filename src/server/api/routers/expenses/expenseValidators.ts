@@ -23,28 +23,41 @@ const baseExpenseValidator = createInsertSchema(expenses, {
     userId: true,
   });
 
-const createExpenseValidator = baseExpenseValidator.omit({
-  id: true,
-});
-// .refine(
-//   (data) => {
-//     // Ensure shares and total are equal
-//     const totalShares = data.shares.reduce(
-//       (acc, { amount }) => acc + amount,
-//       0,
-//     );
-//     if (totalShares !== data.amount) {
-//       return false;
-//     }
-//     return true;
-//   },
-//   { message: "Shares do not add up to total amount" },
-// );
+//! Refinements are not working on group procedures
+const createExpenseValidator = baseExpenseValidator
+  .omit({
+    id: true,
+  })
+  .refine((data) => {
+    // Ensure shares and total are equal
+    const totalShares = data.shares.reduce(
+      (acc, { amount }) => acc + amount,
+      0,
+    );
+    if (totalShares !== data.amount) {
+      return false;
+    }
+    return true;
+  });
 
 const editExpenseValidator = baseExpenseValidator
   .omit({
     groupId: true,
   })
-  .partial();
+  .partial()
+  .refine((data) => {
+    if (!data.shares) {
+      return true;
+    }
+    // Ensure shares and total are equal
+    const totalShares = data.shares.reduce(
+      (acc, { amount }) => acc + amount,
+      0,
+    );
+    if (totalShares !== data.amount) {
+      return false;
+    }
+    return true;
+  });
 
 export { createExpenseValidator, editExpenseValidator };
