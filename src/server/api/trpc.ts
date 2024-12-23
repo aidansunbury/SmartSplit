@@ -94,16 +94,27 @@ export const createTRPCRouter = t.router;
 const timingMiddleware = t.middleware(async ({ next, path }) => {
   const start = Date.now();
 
+  let waitMs = 0;
   if (t._config.isDev) {
     // artificial delay in dev
-    const waitMs = Math.floor(Math.random() * 400) + 100;
+    waitMs = Math.floor(Math.random() * 400) + 100;
     await new Promise((resolve) => setTimeout(resolve, waitMs));
+
+    // Chaos monkey 1/20 chance of failing
+    if (Math.random() < 0.05) {
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Chaos monkey error, this request failed randomly",
+      });
+    }
   }
 
   const result = await next();
 
   const end = Date.now();
-  console.log(`[TRPC] ${path} took ${end - start}ms to execute`);
+  console.log(
+    `[TRPC] ${path} took ${end - start}ms to execute ${t._config.isDev && `including ${waitMs}ms of artificial delay`}`,
+  );
 
   return result;
 });

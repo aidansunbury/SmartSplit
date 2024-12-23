@@ -12,6 +12,26 @@ import { createGroupSchema } from "./groupValidators";
 
 export type GroupMemberMap = Map<string, InferSelectModel<typeof users>>;
 
+const groupOwnerProcedure = protectedProcedure
+  .input(z.object({ groupId: z.string() }))
+  .use(async ({ ctx, next, input }) => {
+    const group = await ctx.db.query.groups.findFirst({
+      where: eq(groups.id, input.groupId),
+    });
+    if (!group || group.ownerId !== ctx.session.user.id) {
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: "Group does not exist or user is not the owner",
+      });
+    }
+    return next({
+      ctx: {
+        ...ctx,
+        group,
+      },
+    });
+  });
+
 export const groupRouter = createTRPCRouter({
   create: protectedProcedure
     .input(createGroupSchema)
@@ -160,4 +180,7 @@ export const groupRouter = createTRPCRouter({
     }
     return group;
   }),
+  // transfer ownership
+  // delete
+  // leave
 });

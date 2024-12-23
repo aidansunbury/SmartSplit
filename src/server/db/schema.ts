@@ -11,6 +11,7 @@ import {
   timestamp,
   uniqueIndex,
   varchar,
+  json,
 } from "drizzle-orm/pg-core";
 import type { AdapterAccount } from "next-auth/adapters";
 import { ulid } from "ulid";
@@ -23,6 +24,7 @@ const createPrefixedUlid = (prefix: string) => {
 
 export const createTable = pgTableCreator((name) => `${name}`);
 
+// TODO add preferred payment methods
 export const users = createTable("user", {
   id: varchar("id", { length: 255 })
     .notNull()
@@ -124,6 +126,11 @@ export const expenseCategories = pgEnum("expense_categories", [
   "health and medical",
 ]);
 
+type ExpenseShare = {
+  userId: string;
+  amount: number; // Positive integer in cents, the shares must sum to the total amount
+};
+
 export const expenses = createTable(
   "expenses",
   {
@@ -133,11 +140,17 @@ export const expenses = createTable(
       .$defaultFn(() => createPrefixedUlid("exp")),
     // Positive integer in cents
     amount: integer("amount").notNull(),
+    shares: json("shares")
+      .$type<ExpenseShare>()
+      .array()
+      .notNull()
+      .default(sql`ARRAY[]::text[]`),
     description: text("description").notNull(),
     // User supplied date of expense. Must be explicity set by user, but will be auto filled by the client
     date: integer("date").notNull(),
     category: expenseCategories("category"),
     notes: text("notes"),
+
     groupId: varchar("groupId", { length: 255 })
       .notNull()
       .references(() => groups.id),

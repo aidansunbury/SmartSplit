@@ -17,6 +17,10 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className={`${GeistSans.variable}`}>
+      {/* React scan code snippet */}
+      {/* <head>
+        <script src="https://unpkg.com/react-scan/dist/auto.global.js" async />
+      </head> */}
       <body>
         <ThemeProvider attribute="class" defaultTheme="system">
           <TRPCReactProvider>{children}</TRPCReactProvider>
