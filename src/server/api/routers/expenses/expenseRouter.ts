@@ -1,14 +1,19 @@
 import { z } from "zod";
 
 import { TRPCError } from "@trpc/server";
-import { type InferSelectModel, and, eq } from "drizzle-orm";
+import { type InferSelectModel, and, eq, sql } from "drizzle-orm";
 import {
   createTRPCRouter,
   groupProcedure,
   protectedProcedure,
 } from "~/server/api/trpc";
 import type { DB } from "~/server/db";
-import { expenses, groups, usersToGroups } from "~/server/db/schema";
+import {
+  expenses,
+  groups,
+  usersToGroups,
+  type ExpenseShare,
+} from "~/server/db/schema";
 import {
   createExpenseValidator,
   editExpenseValidator,
@@ -40,44 +45,39 @@ const expenseOwnerProcedure = protectedProcedure
     });
   });
 
-// When an expense is created, the balance of the user who created the expense is increased. If an expense is deleted or revised downwards, it is as if a "negative" expense was created from the perspective of updating balances.
-//* This should be relatively trivial to modify later for splitting with subsets of the group, as we will just filter the groupUsers before passing them to this function
+//* dont need to fetch and check the users, because in order for the sql operation to work 1. it has to be a valid user id, 2. Their balance needs to be associated with the correct group, 3. they need to be active in said group
 const updateBalancesFromExpense = (
   trx: DB,
   {
     amount,
     groupId,
     creatorId,
-    users,
+    // users,
+    shares,
   }: {
     amount: number;
     creatorId: string;
     groupId: string;
-    users: InferSelectModel<typeof usersToGroups>[];
+    // users: InferSelectModel<typeof usersToGroups>[];
+    shares: ExpenseShare[];
   },
 ) => {
-  // //! This math may make things off by a couple of cents. Cry about it.
-  const baseShare = Math.floor(amount / users.length);
-
-  // If a user spends $30 in a group of three, they are owed $20, not $30
-  const owed = baseShare * (users.length - 1);
-
-  // Subtract a base share from all users in the group who did not create the expense
   const balanceUpdates = [];
-  for (const user of users) {
-    if (user.userId === creatorId) {
-      // Add the owed to the user who created the expense
+
+  for (const share of shares) {
+    // add amount - share to balance
+    if (share.userId === creatorId) {
       balanceUpdates.push(
         trx
           .update(usersToGroups)
           .set({
-            // @ts-ignore: Owed is an integer
-            balance: user.balance + owed,
+            balance: sql`${usersToGroups.balance} + ${amount - share.amount}`,
           })
           .where(
             and(
               eq(usersToGroups.userId, creatorId),
               eq(usersToGroups.groupId, groupId),
+              eq(usersToGroups.active, true),
             ),
           )
           .returning(),
@@ -88,12 +88,13 @@ const updateBalancesFromExpense = (
       trx
         .update(usersToGroups)
         .set({
-          balance: user.balance - baseShare,
+          balance: sql`${usersToGroups.balance} - ${share.amount}`,
         })
         .where(
           and(
-            eq(usersToGroups.userId, user.userId),
+            eq(usersToGroups.userId, share.userId),
             eq(usersToGroups.groupId, groupId),
+            eq(usersToGroups.active, true),
           ),
         )
         .returning(),
@@ -116,9 +117,9 @@ export const expenseRouter = createTRPCRouter({
           .returning();
 
         const groupUsers = await trx.query.groups.findFirst({
-          where: eq(groups.id, input.groupId),
           with: {
             users: {
+              where: eq(usersToGroups.active, true),
               orderBy: (usersToGroups, { asc }) => [asc(usersToGroups.userId)],
             },
           },

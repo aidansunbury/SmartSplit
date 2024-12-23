@@ -126,7 +126,7 @@ export const expenseCategories = pgEnum("expense_categories", [
   "health and medical",
 ]);
 
-type ExpenseShare = {
+export type ExpenseShare = {
   userId: string;
   amount: number; // Positive integer in cents, the shares must sum to the total amount
 };
@@ -140,11 +140,9 @@ export const expenses = createTable(
       .$defaultFn(() => createPrefixedUlid("exp")),
     // Positive integer in cents
     amount: integer("amount").notNull(),
-    shares: json("shares")
-      .$type<ExpenseShare>()
-      .array()
-      .notNull()
-      .default(sql`ARRAY[]::text[]`),
+    shares: json("shares").$type<ExpenseShare>().array(),
+    // .notNull()
+    // .default(sql`ARRAY[]::text[]`),
     description: text("description").notNull(),
     // User supplied date of expense. Must be explicity set by user, but will be auto filled by the client
     date: integer("date").notNull(),
