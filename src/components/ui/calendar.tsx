@@ -15,9 +15,11 @@ function Calendar({
   showOutsideDays = true,
   ...props
 }: CalendarProps) {
+  const { initialFocus, ...rest } = props;
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}
+      // https://github.com/shadcn-ui/ui/issues/910#issuecomment-1770255810
       className={cn("p-3", className)}
       classNames={{
         months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
@@ -57,7 +59,8 @@ function Calendar({
         IconLeft: ({ ...props }) => <ChevronLeft className="h-4 w-4" />,
         IconRight: ({ ...props }) => <ChevronRight className="h-4 w-4" />,
       }}
-      {...props}
+      {...rest}
+      initialFocus={false}
     />
   )
 }

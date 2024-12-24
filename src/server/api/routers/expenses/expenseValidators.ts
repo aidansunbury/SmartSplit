@@ -24,21 +24,20 @@ const baseExpenseValidator = createInsertSchema(expenses, {
   });
 
 //! Refinements are not working on group procedures
-const createExpenseValidator = baseExpenseValidator
-  .omit({
-    id: true,
-  })
-  .refine((data) => {
-    // Ensure shares and total are equal
-    const totalShares = data.shares.reduce(
-      (acc, { amount }) => acc + amount,
-      0,
-    );
-    if (totalShares !== data.amount) {
-      return false;
-    }
-    return true;
-  });
+const createExpenseValidator = baseExpenseValidator.omit({
+  id: true,
+});
+// .refine((data) => {
+//   // Ensure shares and total are equal
+//   const totalShares = data.shares.reduce(
+//     (acc, { amount }) => acc + amount,
+//     0,
+//   );
+//   if (totalShares !== data.amount) {
+//     return false;
+//   }
+//   return true;
+// });
 
 const editExpenseValidator = baseExpenseValidator
   .omit({
