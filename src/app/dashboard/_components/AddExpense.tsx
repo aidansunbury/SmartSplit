@@ -65,9 +65,11 @@ import {
   CategoryIconMap,
   CategoryKeywordMap,
 } from "~/components/ExpenseCategoryIcons";
+import { Checkbox } from "~/components/ui/checkbox";
 import { formatCurrency } from "~/lib/currencyFormat";
 import { cn } from "~/lib/utils";
 import { expenseCategories } from "~/server/db/schema";
+import type { ExpenseShare } from "~/server/db/schema";
 import { api } from "~/trpc/react";
 
 const categories = expenseCategories.enumValues.map((category) => ({
@@ -75,25 +77,36 @@ const categories = expenseCategories.enumValues.map((category) => ({
   label: category.charAt(0).toUpperCase() + category.slice(1),
 }));
 
+const splitTypes = ["equal", "exact amounts"] as const;
+type SplitType = (typeof splitTypes)[number];
+
 export function AddExpense() {
   const [group] = useQueryState("group");
   const [isOpen, setOpen] = useState<boolean>(false);
   const [closeOnSubmit, setCloseOnSubmit] = useState<boolean>(true);
 
+  const { data: groupMembers } = api.group.get.useQuery({
+    groupId: group as string,
+  });
+
   const formValidator = createExpenseValidator.extend({
     amount: currencyValidator,
     date: dateValidator,
   });
-  type FormType = z.infer<typeof formValidator>;
+  type FormType = Omit<z.infer<typeof formValidator>, "shares"> & {
+    splitTypes: SplitType;
+  } & { shares: Array<ExpenseShare & { active: boolean }> };
 
   const defaultValues: FormType = {
     groupId: group as string,
-    amount: 0,
+    amount: "0" as unknown as number,
     description: "",
     notes: "",
     category: null,
+    splitTypes: "equal",
     // @ts-ignore The date object is transformed upon validation
     date: new Date(),
+    shares: [],
   };
 
   const { toast } = useToast();
@@ -102,7 +115,7 @@ export function AddExpense() {
     defaultValues,
   });
 
-  const { control, handleSubmit, formState } = form;
+  const { control, handleSubmit, formState, watch } = form;
   const utils = api.useUtils();
   const { mutate, isPending } = api.expense.create.useMutation({
     onSuccess: (data) => {
@@ -132,6 +145,8 @@ export function AddExpense() {
   const onValidationError: SubmitErrorHandler<FormType> = (errors) => {
     console.log(errors);
   };
+
+  const [date, setDate] = useState<Date>();
 
   return (
     <Dialog
@@ -235,7 +250,10 @@ export function AddExpense() {
                 <FormItem className="flex flex-col">
                   <FormLabel optional={false}>Date </FormLabel>
                   <Popover>
-                    <PopoverTrigger asChild>
+                    <PopoverTrigger
+                      asChild
+                      onClick={() => console.log("popover clicked")}
+                    >
                       <FormControl>
                         <Button
                           variant={"outline"}
@@ -352,6 +370,27 @@ export function AddExpense() {
                 </FormItem>
               )}
             />
+            <FormField
+              control={form.control}
+              name="splitTypes"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value === "equal"}
+                      onCheckedChange={(e) => {
+                        const set = e ? "equal" : "exact amounts";
+                        field.onChange(set);
+                      }}
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel>Split Evenly</FormLabel>
+                  </div>
+                </FormItem>
+              )}
+            />
+            {watch("splitTypes") === "exact amounts" && "Hi"}
 
             <FormField
               control={control}
@@ -361,10 +400,7 @@ export function AddExpense() {
                   <FormLabel>Notes</FormLabel>
                   <FormControl>
                     {/* @ts-ignore */}
-                    <Textarea
-                      placeholder="Add more detailed info about the expense..."
-                      {...field}
-                    />
+                    <Textarea placeholder="More info..." {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -372,7 +408,7 @@ export function AddExpense() {
             />
 
             <DialogFooter className="mt-4 flex flex-row items-center justify-end space-x-2">
-              <div className="mr-auto space-x-2">
+              <div className="mr-auto flex flex-row space-x-2">
                 <Button
                   type="button"
                   onClick={() => form.reset(defaultValues)}
@@ -387,6 +423,7 @@ export function AddExpense() {
                     form.reset(defaultValues);
                   }}
                   variant="ghost"
+                  className="hidden md:flex"
                 >
                   Cancel
                 </Button>
