@@ -1,24 +1,22 @@
 import { z } from "zod";
 
 import { TRPCError } from "@trpc/server";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import {
   createTRPCRouter,
   groupProcedure,
   protectedProcedure,
 } from "~/server/api/trpc";
-import type { DB } from "~/server/db";
-import {
-  expenses,
-  groups,
-  usersToGroups,
-  type ExpenseShare,
-} from "~/server/db/schema";
+import { expenses, groups, type ExpenseShare } from "~/server/db/schema";
 import {
   createExpenseValidator,
   editExpenseValidator,
 } from "./expenseValidators";
-import { Input } from "postcss";
+import {
+  preprocessShares,
+  calculateAdjustments,
+  updateBalances,
+} from "./expenseHelpers";
 
 const expenseOwnerProcedure = protectedProcedure
   .input(z.object({ id: z.string() }))
@@ -46,61 +44,7 @@ const expenseOwnerProcedure = protectedProcedure
     });
   });
 
-const updateBalancesFromExpense = (
-  trx: DB,
-  {
-    amount,
-    groupId,
-    creatorId,
-    shares,
-  }: {
-    amount: number;
-    creatorId: string;
-    groupId: string;
-    shares: ExpenseShare[];
-  },
-) => {
-  const balanceUpdates = [];
-
-  for (const share of shares) {
-    // add amount - share to balance
-    if (share.userId === creatorId) {
-      balanceUpdates.push(
-        trx
-          .update(usersToGroups)
-          .set({
-            balance: sql`${usersToGroups.balance} + ${amount - share.amount}`,
-          })
-          .where(
-            and(
-              eq(usersToGroups.userId, creatorId),
-              eq(usersToGroups.groupId, groupId),
-              eq(usersToGroups.active, true),
-            ),
-          )
-          .returning(),
-      );
-      continue;
-    }
-    balanceUpdates.push(
-      trx
-        .update(usersToGroups)
-        .set({
-          balance: sql`${usersToGroups.balance} - ${share.amount}`,
-        })
-        .where(
-          and(
-            eq(usersToGroups.userId, share.userId),
-            eq(usersToGroups.groupId, groupId),
-            eq(usersToGroups.active, true),
-          ),
-        )
-        .returning(),
-    );
-  }
-  return balanceUpdates;
-};
-
+//! Ensuring the sums are equal will be handled by zod, but it's not working with trpc-ui yet
 export const expenseRouter = createTRPCRouter({
   create: groupProcedure
     .input(createExpenseValidator)
@@ -114,11 +58,32 @@ export const expenseRouter = createTRPCRouter({
           })
           .returning();
 
-        const balanceUpdates = updateBalancesFromExpense(trx, {
-          amount: input.amount,
-          creatorId: ctx.session.user.id,
+        // The expense creator's balance update is total - share, while the other users' balances are just -share
+        const adjustedShares = input.shares.map((share) => {
+          if (share.userId === ctx.session.user.id) {
+            return {
+              ...share,
+              amount: input.amount - share.amount,
+            };
+          }
+
+          return {
+            ...share,
+            amount: -share.amount,
+          };
+        });
+        // Ensure the creator's share is included in the balance updates
+        if (
+          !adjustedShares.some((share) => share.userId === ctx.session.user.id)
+        ) {
+          adjustedShares.push({
+            userId: ctx.session.user.id,
+            amount: 0,
+          });
+        }
+        const balanceUpdates = updateBalances(trx as any, {
           groupId: input.groupId,
-          shares: input.shares,
+          shares: adjustedShares,
         });
 
         const updatedBalances = await Promise.all(balanceUpdates);
@@ -134,8 +99,7 @@ export const expenseRouter = createTRPCRouter({
       });
       return newExpense;
     }),
-
-  //! These edit procedure is bricked, since it doesn't account for the existing shares. In order to make this easier without modifying the updateBalanceFromExpense, we just need to calculate the difference between what the currently saved share is, and what the new share should be and pass that difference into the function
+  //! Ensuring the sums are equal to the total will be handled by zod, but it's not working with trpc-ui yet
   edit: expenseOwnerProcedure
     .input(editExpenseValidator)
     .mutation(async ({ input, ctx }) => {
@@ -150,36 +114,36 @@ export const expenseRouter = createTRPCRouter({
             ),
           )
           .returning();
-        if (input.amount !== undefined && input.amount !== ctx.expense.amount) {
-          const difference = input.amount - ctx.expense.amount;
 
-          const groupUsers = await trx.query.groups.findFirst({
-            where: eq(groups.id, ctx.expense.groupId),
-            with: {
-              users: {
-                orderBy: (usersToGroups, { asc }) => [
-                  asc(usersToGroups.userId),
-                ],
-              },
+        const groupUsers = await trx.query.groups.findFirst({
+          where: eq(groups.id, ctx.expense.groupId),
+          with: {
+            users: {
+              orderBy: (usersToGroups, { asc }) => [asc(usersToGroups.userId)],
             },
+          },
+        });
+
+        if (!groupUsers) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Group not found",
           });
-
-          if (!groupUsers) {
-            throw new TRPCError({
-              code: "NOT_FOUND",
-              message: "Group not found",
-            });
-          }
-
-          const balanceUpdates = updateBalancesFromExpense(trx, {
-            amount: difference,
-            creatorId: ctx.session.user.id,
-            groupId: ctx.expense.groupId,
-            users: groupUsers.users,
-          });
-
-          await Promise.all(balanceUpdates);
         }
+        const { processedOriginalShares, processedNewShares } =
+          preprocessShares(ctx.expense.shares as ExpenseShare[], input.shares);
+        const adjustments = calculateAdjustments(
+          processedOriginalShares,
+          processedNewShares,
+        );
+
+        const balanceUpdates = updateBalances(trx as any, {
+          groupId: ctx.expense.groupId,
+          shares: adjustments,
+        });
+
+        await Promise.all(balanceUpdates);
+
         const [updatedExpense] = await updatedExpensePromise;
         if (!updatedExpense) {
           throw new TRPCError({
@@ -191,13 +155,25 @@ export const expenseRouter = createTRPCRouter({
       });
       return expense;
     }),
+
   delete: expenseOwnerProcedure.mutation(async ({ ctx }) => {
     const expense = await ctx.db.transaction(async (trx) => {
-      const balanceUpdates = updateBalancesFromExpense(trx, {
-        amount: -ctx.expense.amount,
-        creatorId: ctx.session.user.id,
+      const shares = ctx.expense.shares as ExpenseShare[];
+
+      // Add the shares back to the user balances, except for the user who created the expense
+      const adjustedShares = shares.map((share) => {
+        if (share.userId === ctx.session.user.id) {
+          return {
+            ...share,
+            amount: share.amount - ctx.expense.amount,
+          };
+        }
+        return share;
+      });
+
+      const balanceUpdates = updateBalances(trx as any, {
         groupId: ctx.expense.groupId,
-        shares: ctx.expense.shares,
+        shares: adjustedShares,
       });
 
       const [deletedExpense] = await trx

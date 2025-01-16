@@ -37,7 +37,6 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-  FormDescription,
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
@@ -66,12 +65,12 @@ import {
   CategoryIconMap,
   CategoryKeywordMap,
 } from "~/components/ExpenseCategoryIcons";
+import { Checkbox } from "~/components/ui/checkbox";
 import { formatCurrency } from "~/lib/currencyFormat";
 import { cn } from "~/lib/utils";
 import { expenseCategories } from "~/server/db/schema";
-import { api } from "~/trpc/react";
-import { Checkbox } from "~/components/ui/checkbox";
 import type { ExpenseShare } from "~/server/db/schema";
+import { api } from "~/trpc/react";
 
 const categories = expenseCategories.enumValues.map((category) => ({
   value: category,

@@ -4,6 +4,7 @@ import {
   check,
   index,
   integer,
+  json,
   pgEnum,
   pgTableCreator,
   primaryKey,
@@ -11,7 +12,6 @@ import {
   timestamp,
   uniqueIndex,
   varchar,
-  json,
 } from "drizzle-orm/pg-core";
 import type { AdapterAccount } from "next-auth/adapters";
 import { ulid } from "ulid";
@@ -140,6 +140,8 @@ export const expenses = createTable(
       .$defaultFn(() => createPrefixedUlid("exp")),
     // Positive integer in cents
     amount: integer("amount").notNull(),
+
+    // "equal" vs "custom" splits are not stored differently in the database, and are instead determined by the client based on the shares array
     shares: json("shares").$type<ExpenseShare>().array(),
     // .notNull()
     // .default(sql`ARRAY[]::text[]`),

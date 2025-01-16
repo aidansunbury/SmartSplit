@@ -1,5 +1,5 @@
-import { z } from "zod";
 import { createInsertSchema } from "drizzle-zod";
+import { z } from "zod";
 import { expenses } from "~/server/db/schema";
 
 const shareValidator = z.object({
@@ -23,7 +23,8 @@ const baseExpenseValidator = createInsertSchema(expenses, {
     userId: true,
   });
 
-//! Refinements are not working on group procedures
+//! Refinements are not working on group procedures with trpc-ui
+// TODO enable this before deploying
 const createExpenseValidator = baseExpenseValidator.omit({
   id: true,
 });
@@ -39,24 +40,22 @@ const createExpenseValidator = baseExpenseValidator.omit({
 //   return true;
 // });
 
-const editExpenseValidator = baseExpenseValidator
-  .omit({
-    groupId: true,
-  })
-  .partial()
-  .refine((data) => {
-    if (!data.shares) {
-      return true;
-    }
-    // Ensure shares and total are equal
-    const totalShares = data.shares.reduce(
-      (acc, { amount }) => acc + amount,
-      0,
-    );
-    if (totalShares !== data.amount) {
-      return false;
-    }
-    return true;
-  });
+//! Refinements are not working on group procedures with trpc-ui
+// TODO enable this before deploying
+//* Since data will be pre-filled from the frontend, we can make all fields required
+const editExpenseValidator = baseExpenseValidator.omit({
+  groupId: true,
+});
+// .refine((data) => {
+//   // Ensure shares and total are equal
+//   const totalShares = data.shares.reduce(
+//     (acc, { amount }) => acc + amount,
+//     0,
+//   );
+//   if (totalShares !== data.amount) {
+//     return false;
+//   }
+//   return true;
+// });
 
 export { createExpenseValidator, editExpenseValidator };
