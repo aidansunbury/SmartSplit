@@ -11,6 +11,7 @@ import { expenses, groups, type ExpenseShare } from "~/server/db/schema";
 import {
   createExpenseValidator,
   editExpenseValidator,
+  withSharesValidation,
 } from "./expenseValidators";
 import {
   preprocessShares,
@@ -47,7 +48,15 @@ const expenseOwnerProcedure = protectedProcedure
 //! Ensuring the sums are equal will be handled by zod, but it's not working with trpc-ui yet
 export const expenseRouter = createTRPCRouter({
   create: groupProcedure
-    .input(createExpenseValidator)
+    .input(
+      createExpenseValidator.refine((data) => {
+        const totalShares = data.shares.reduce(
+          (acc, { amount }) => acc + amount,
+          0,
+        );
+        return totalShares === data.amount;
+      }),
+    )
     .mutation(async ({ input, ctx }) => {
       const newExpense = await ctx.db.transaction(async (trx) => {
         const newExpense = trx
@@ -101,7 +110,15 @@ export const expenseRouter = createTRPCRouter({
     }),
   //! Ensuring the sums are equal to the total will be handled by zod, but it's not working with trpc-ui yet
   edit: expenseOwnerProcedure
-    .input(editExpenseValidator)
+    .input(
+      editExpenseValidator.refine((data) => {
+        const totalShares = data.shares.reduce(
+          (acc, { amount }) => acc + amount,
+          0,
+        );
+        return totalShares === data.amount;
+      }),
+    )
     .mutation(async ({ input, ctx }) => {
       const expense = await ctx.db.transaction(async (trx) => {
         const updatedExpensePromise = trx

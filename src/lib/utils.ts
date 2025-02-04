@@ -39,3 +39,18 @@ export function getFormattedDate() {
 
   return `${month} ${day}${ordinalSuffix}`;
 }
+
+export function createShares(total: number, numPeople: number): number[] {
+  const baseShare = Math.floor(total / numPeople); // Round to 2 decimals
+  const shares = Array(numPeople).fill(baseShare);
+
+  const currentTotal = shares.reduce((sum, share) => sum + share, 0);
+  const difference = total - currentTotal; // Convert to cents to avoid floating point issues
+
+  // Distribute the rounding difference fairly
+  for (let i = 0; i < difference; i++) {
+    shares[i % numPeople] += 1;
+  }
+
+  return shares;
+}

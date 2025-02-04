@@ -131,6 +131,8 @@ export type ExpenseShare = {
   amount: number; // Positive integer in cents, the shares must sum to the total amount
 };
 
+export const splitTypes = pgEnum("split_types", ["equal", "custom"]);
+
 export const expenses = createTable(
   "expenses",
   {
@@ -141,8 +143,9 @@ export const expenses = createTable(
     // Positive integer in cents
     amount: integer("amount").notNull(),
 
-    // "equal" vs "custom" splits are not stored differently in the database, and are instead determined by the client based on the shares array
-    shares: json("shares").$type<ExpenseShare>().array(),
+    // This does not impact how the data is processed, but it does impact how the data is displayed when returned to the client
+    splitType: splitTypes("splitType").default("equal").notNull(),
+    shares: json("shares").array().$type<ExpenseShare[]>(),
     // .notNull()
     // .default(sql`ARRAY[]::text[]`),
     description: text("description").notNull(),

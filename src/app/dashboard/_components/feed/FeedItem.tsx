@@ -48,7 +48,7 @@ export const FeedItem: React.FC<FeedSummaryProps> = ({
     //* FeedItem is an Expense
     const isOwner = feedItem.userId === me?.id;
     const payerObj = groupMembers.get(feedItem.userId);
-    const evenSplit = Math.floor(feedItem.amount / groupMembers.size);
+    // const evenSplit = Math.floor(feedItem.amount / groupMembers.size);
 
     if (!payerObj) {
       return null;
@@ -91,25 +91,33 @@ export const FeedItem: React.FC<FeedSummaryProps> = ({
           </div>
         </div>
         <div className="flex flex-col space-y-1 lg:w-1/2">
-          <UserDisplay
-            name={payerObj?.name}
-            image={payerObj?.image ?? ""}
-            verb="lent"
-            amount={evenSplit * (groupMembers.size - 1)}
-          />
-          {groupMembers &&
-            Array.from(groupMembers).map(
-              ([id, member]) =>
-                id !== payerObj?.id && (
-                  <UserDisplay
-                    key={id}
-                    name={member.name}
-                    image={member.image}
-                    verb="owes"
-                    amount={evenSplit}
-                  />
-                ),
-            )}
+          {feedItem.shares?.map((share) => {
+            const member = groupMembers.get(share.userId);
+            if (!member) {
+              return null;
+            }
+            if (member.id === payerObj?.id) {
+              return (
+                <UserDisplay
+                  name={member.name}
+                  key={member.id}
+                  image={member?.image ?? ""}
+                  verb="lent"
+                  amount={feedItem.amount - share.amount}
+                />
+              );
+            }
+
+            return (
+              <UserDisplay
+                key={member.id}
+                name={member.name}
+                image={member.image}
+                verb="owes"
+                amount={share.amount}
+              />
+            );
+          })}
         </div>
       </div>
     );

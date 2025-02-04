@@ -28,17 +28,6 @@ const baseExpenseValidator = createInsertSchema(expenses, {
 const createExpenseValidator = baseExpenseValidator.omit({
   id: true,
 });
-// .refine((data) => {
-//   // Ensure shares and total are equal
-//   const totalShares = data.shares.reduce(
-//     (acc, { amount }) => acc + amount,
-//     0,
-//   );
-//   if (totalShares !== data.amount) {
-//     return false;
-//   }
-//   return true;
-// });
 
 //! Refinements are not working on group procedures with trpc-ui
 // TODO enable this before deploying
@@ -46,16 +35,27 @@ const createExpenseValidator = baseExpenseValidator.omit({
 const editExpenseValidator = baseExpenseValidator.omit({
   groupId: true,
 });
-// .refine((data) => {
-//   // Ensure shares and total are equal
-//   const totalShares = data.shares.reduce(
-//     (acc, { amount }) => acc + amount,
-//     0,
-//   );
-//   if (totalShares !== data.amount) {
-//     return false;
-//   }
-//   return true;
-// });
+
+// Reusable refinement function
+const validateSharesTotal = (data: {
+  shares: { amount: number }[];
+  amount: number;
+}) => {
+  const totalShares = data.shares.reduce((acc, { amount }) => acc + amount, 0);
+  return totalShares === data.amount;
+};
+
+// Function to apply the refinement to a schema
+export const withSharesValidation = <T extends z.ZodTypeAny>(
+  schema: T,
+  minShares = 2,
+) =>
+  schema
+    .refine(validateSharesTotal, {
+      message: "Total shares must be equal to the amount.",
+    })
+    .refine((data) => data.shares.length >= minShares, {
+      message: `Must be split between at least ${minShares} people.`,
+    });
 
 export { createExpenseValidator, editExpenseValidator };

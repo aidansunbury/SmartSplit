@@ -4,7 +4,7 @@ import { z } from "zod";
 export const currencyValidator = z.string().transform((val, ctx) => {
   const cents = Math.round(Number.parseFloat(val) * 100);
 
-  if (cents <= 0) {
+  if (cents < 0) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
       message: "Value must be positive",

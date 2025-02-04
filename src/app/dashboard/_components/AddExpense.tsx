@@ -11,10 +11,12 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { format } from "date-fns";
+import { Avatar, AvatarImage } from "@/components/ui/avatar";
 
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { useBeforeunload } from "react-beforeunload";
+import clsx from "clsx";
 
 import {
   Command,
@@ -46,7 +48,7 @@ import {
   ChevronsUpDown,
   CircleDollarSign,
 } from "lucide-react";
-import type { z } from "zod";
+import { z } from "zod";
 import { dateValidator } from "~/lib/dateValidator";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -56,9 +58,13 @@ import {
   type SubmitErrorHandler,
   type SubmitHandler,
   useForm,
+  useFieldArray,
 } from "react-hook-form";
 import { currencyValidator } from "~/lib/currencyValidator";
-import { createExpenseValidator } from "~/server/api/routers/expenses/expenseValidators";
+import {
+  createExpenseValidator,
+  withSharesValidation,
+} from "~/server/api/routers/expenses/expenseValidators";
 
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -72,13 +78,13 @@ import { expenseCategories } from "~/server/db/schema";
 import type { ExpenseShare } from "~/server/db/schema";
 import { api } from "~/trpc/react";
 
+import { DevTool } from "@hookform/devtools";
+import { createShares } from "~/lib/utils";
+
 const categories = expenseCategories.enumValues.map((category) => ({
   value: category,
   label: category.charAt(0).toUpperCase() + category.slice(1),
 }));
-
-const splitTypes = ["equal", "exact amounts"] as const;
-type SplitType = (typeof splitTypes)[number];
 
 export function AddExpense() {
   const [group] = useQueryState("group");
@@ -89,13 +95,47 @@ export function AddExpense() {
     groupId: group as string,
   });
 
-  const formValidator = createExpenseValidator.extend({
-    amount: currencyValidator,
-    date: dateValidator,
-  });
+  const shareValidator = z
+    .object({
+      userId: z.string(),
+      amount: currencyValidator.optional(),
+      active: z.boolean(),
+    })
+    .array()
+    .min(2);
+
+  const formValidator = withSharesValidation(
+    createExpenseValidator
+      .extend({
+        amount: currencyValidator,
+        date: dateValidator,
+        shares: shareValidator,
+      })
+      .transform((data) => {
+        // If it is evenly split, manually calculate the shares, regardless of the user input
+        if (data.splitType === "equal") {
+          console.log(data);
+          const shares = createShares(data.amount, data.shares.length);
+          return {
+            ...data,
+            shares: data.shares.map((share, index) => ({
+              ...share,
+              amount: shares[index],
+              active: true,
+            })),
+          };
+        }
+        // If not, strip out the inactive shares
+        return {
+          ...data,
+          shares: data.shares.filter((share) => share.active),
+        };
+      }),
+  );
+
   type FormType = Omit<z.infer<typeof formValidator>, "shares"> & {
-    splitTypes: SplitType;
-  } & { shares: Array<ExpenseShare & { active: boolean }> };
+    shares: Array<ExpenseShare & { active: boolean }>;
+  };
 
   const defaultValues: FormType = {
     groupId: group as string,
@@ -103,10 +143,15 @@ export function AddExpense() {
     description: "",
     notes: "",
     category: null,
-    splitTypes: "equal",
+    splitType: "equal",
     // @ts-ignore The date object is transformed upon validation
     date: new Date(),
-    shares: [],
+    shares:
+      groupMembers?.users.map((member) => ({
+        userId: member.user.id,
+        amount: "0" as unknown as number,
+        active: true,
+      })) ?? [],
   };
 
   const { toast } = useToast();
@@ -115,7 +160,12 @@ export function AddExpense() {
     defaultValues,
   });
 
-  const { control, handleSubmit, formState, watch } = form;
+  const { control, handleSubmit, formState, watch, setValue } = form;
+  const shares = useFieldArray({
+    control,
+    name: "shares",
+  });
+
   const utils = api.useUtils();
   const { mutate, isPending } = api.expense.create.useMutation({
     onSuccess: (data) => {
@@ -162,7 +212,6 @@ export function AddExpense() {
           Add Expense
         </Button>
       </DialogTrigger>
-
       <DialogContent
         onInteractOutside={(e) => {
           if (formState.isDirty) {
@@ -173,6 +222,7 @@ export function AddExpense() {
           }
         }}
       >
+        {/* <DevTool control={control} /> */}
         <Form {...form}>
           <form
             onSubmit={handleSubmit(onSubmit, onValidationError)}
@@ -372,25 +422,123 @@ export function AddExpense() {
             />
             <FormField
               control={form.control}
-              name="splitTypes"
+              name="splitType"
               render={({ field }) => (
-                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow">
+                <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md py-2">
                   <FormControl>
                     <Checkbox
                       checked={field.value === "equal"}
                       onCheckedChange={(e) => {
-                        const set = e ? "equal" : "exact amounts";
+                        const set = e ? "equal" : "custom";
                         field.onChange(set);
+                        if (
+                          formState.dirtyFields.amount &&
+                          !formState.dirtyFields.shares
+                        ) {
+                          const shares = createShares(
+                            form.getValues("amount"),
+                            form.getValues("shares").length,
+                          );
+                          form.setValue(
+                            "shares",
+                            form.getValues("shares").map((share, index) => ({
+                              ...share,
+                              amount: String(
+                                shares[index],
+                              ) as unknown as number,
+                              active: true,
+                            })),
+                          );
+                        }
                       }}
                     />
                   </FormControl>
-                  <div className="space-y-1 leading-none">
-                    <FormLabel>Split Evenly</FormLabel>
-                  </div>
+                  <FormLabel className="text-base">Split Evenly</FormLabel>
                 </FormItem>
               )}
             />
-            {watch("splitTypes") === "exact amounts" && "Hi"}
+            {watch("splitType") === "custom" && (
+              <div className="space-y-2">
+                {groupMembers?.users.map((member) => {
+                  const memberIndex = shares.fields.findIndex(
+                    (share) => share.userId === member.user.id,
+                  );
+                  return (
+                    <div
+                      key={member.user.id}
+                      className="flex flex-row items-end justify-between"
+                    >
+                      <div className="flex flex-row items-center space-x-2">
+                        <FormField
+                          control={control}
+                          name={`shares.${memberIndex}.active`}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormControl>
+                                <Checkbox
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <Avatar>
+                          <AvatarImage
+                            src={member.user.image ?? undefined}
+                            alt={member.user.name}
+                          />
+                        </Avatar>
+                        <span
+                          className={clsx(
+                            "text-nowrap",
+                            watch(`shares.${memberIndex}.active`)
+                              ? "text-primary"
+                              : "text-muted-foreground",
+                          )}
+                        >
+                          {/* The user */}
+                          {member.user.name}
+                        </span>
+                      </div>
+
+                      <FormField
+                        control={control}
+                        disabled={!watch(`shares.${memberIndex}.active`)}
+                        name={`shares.${memberIndex}.amount`}
+                        render={({ field }) => (
+                          <FormItem className="w-32">
+                            <FormControl>
+                              <div className="relative ">
+                                <Input
+                                  id="input-09"
+                                  className="peer ps-9"
+                                  placeholder="10.00"
+                                  type="number"
+                                  {...field}
+                                />
+                                <div className="pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3 text-muted-foreground/80 peer-disabled:opacity-50">
+                                  <DollarSign
+                                    size={16}
+                                    strokeWidth={2}
+                                    aria-hidden="true"
+                                  />
+                                </div>
+                              </div>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  );
+                })}
+                <span className="text-destructive font-bold py-2">
+                  {formState.errors[""]?.message}
+                </span>
+              </div>
+            )}
 
             <FormField
               control={control}

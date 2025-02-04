@@ -1,10 +1,9 @@
 "use client";
 
-import { AvatarImage } from "@radix-ui/react-avatar";
 import clsx from "clsx";
 import { Crown, Settings, UserPlus } from "lucide-react";
 import { useQueryState } from "nuqs";
-import { Avatar } from "~/components/ui/avatar";
+import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "~/components/ui/button";
 import { formatCurrency } from "~/lib/currencyFormat";
 import { api } from "~/trpc/react";

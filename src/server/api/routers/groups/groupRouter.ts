@@ -128,6 +128,7 @@ export const groupRouter = createTRPCRouter({
               groupId: false,
               userId: false,
             },
+            orderBy: (userToGroup, { asc }) => [asc(userToGroup.userId)],
           },
         },
       });
