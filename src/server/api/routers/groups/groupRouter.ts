@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { TRPCError } from "@trpc/server";
-import { type InferSelectModel, eq } from "drizzle-orm";
+import { type InferSelectModel, and, eq } from "drizzle-orm";
 import {
   createTRPCRouter,
   groupProcedure,
@@ -95,6 +95,7 @@ export const groupRouter = createTRPCRouter({
             set: {
               groupId: group.id,
               userId: ctx.session.user.id,
+              active: true,
             },
           })
           .returning();
@@ -150,8 +151,13 @@ export const groupRouter = createTRPCRouter({
       description: "List all groups the current user is a member of",
     })
     .query(async ({ ctx }) => {
+      // artifical delay
+      await new Promise((resolve) => setTimeout(resolve, 2000));
       const myGroups = await ctx.db.query.usersToGroups.findMany({
-        where: eq(usersToGroups.userId, ctx.session.user.id),
+        where: and(
+          eq(usersToGroups.userId, ctx.session.user.id),
+          eq(usersToGroups.active, true),
+        ),
         with: {
           group: true,
         },
@@ -183,5 +189,51 @@ export const groupRouter = createTRPCRouter({
   }),
   // transfer ownership
   // delete
-  // leave
+  leave: groupProcedure.mutation(async ({ ctx, input }) => {
+    const result = await ctx.db.transaction(async (trx) => {
+      // Check the user balance, and ensure they are not the owner
+      const group = await trx.query.groups.findFirst({
+        where: eq(groups.id, input.groupId),
+        with: {
+          users: {
+            where: eq(usersToGroups.userId, ctx.session.user.id),
+          },
+        },
+      });
+      if (group?.ownerId === ctx.session.user.id) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Owner cannot leave group, transfer ownership first",
+        });
+      }
+
+      if (group?.users[0]?.balance !== 0) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "User must have a balance of 0 to leave group",
+        });
+      }
+
+      const [updatedUserToGroup] = await trx
+        .update(usersToGroups)
+        .set({
+          active: false,
+        })
+        .where(
+          and(
+            eq(usersToGroups.groupId, input.groupId),
+            eq(usersToGroups.userId, ctx.session.user.id),
+          ),
+        )
+        .returning();
+      if (!updatedUserToGroup) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to leave group",
+        });
+      }
+      return updatedUserToGroup;
+    });
+    return result;
+  }),
 });

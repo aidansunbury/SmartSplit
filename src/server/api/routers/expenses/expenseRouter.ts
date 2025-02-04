@@ -7,17 +7,16 @@ import {
   groupProcedure,
   protectedProcedure,
 } from "~/server/api/trpc";
-import { expenses, groups, type ExpenseShare } from "~/server/db/schema";
+import { type ExpenseShare, expenses, groups } from "~/server/db/schema";
+import {
+  calculateAdjustments,
+  preprocessShares,
+  updateBalances,
+} from "./expenseHelpers";
 import {
   createExpenseValidator,
   editExpenseValidator,
-  withSharesValidation,
 } from "./expenseValidators";
-import {
-  preprocessShares,
-  calculateAdjustments,
-  updateBalances,
-} from "./expenseHelpers";
 
 const expenseOwnerProcedure = protectedProcedure
   .input(z.object({ id: z.string() }))

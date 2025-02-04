@@ -12,6 +12,7 @@ export default async function DashboardLayout({
   if (!session) {
     return redirect("/");
   }
+
   return (
     <SidebarProvider>
       <AppSidebar user={session.user} />

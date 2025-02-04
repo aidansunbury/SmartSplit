@@ -1,10 +1,12 @@
 "use client";
 
+import { buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { Trash2 as RemoveIcon } from "lucide-react";
 import {
-  Dispatch,
-  SetStateAction,
+  type Dispatch,
+  type SetStateAction,
   createContext,
   forwardRef,
   useCallback,
@@ -14,14 +16,12 @@ import {
   useState,
 } from "react";
 import {
+  type DropzoneOptions,
+  type DropzoneState,
+  type FileRejection,
   useDropzone,
-  DropzoneState,
-  FileRejection,
-  DropzoneOptions,
 } from "react-dropzone";
 import { useToast } from "~/hooks/use-toast";
-import { Trash2 as RemoveIcon } from "lucide-react";
-import { buttonVariants } from "@/components/ui/button";
 
 type DirectionOptions = "rtl" | "ltr" | undefined;
 
@@ -87,7 +87,7 @@ export const FileUploader = forwardRef<
       maxSize = 4 * 1024 * 1024,
       multiple = true,
     } = dropzoneOptions;
-    const { toast }  = useToast();
+    const { toast } = useToast();
 
     const reSelectAll = maxFiles === 1 ? true : reSelect;
     const direction: DirectionOptions = dir === "rtl" ? "rtl" : "ltr";
@@ -162,10 +162,10 @@ export const FileUploader = forwardRef<
         const files = acceptedFiles;
 
         if (!files) {
-            toast({
-                title: "File error",
-                description: "File is likely too big",
-              });
+          toast({
+            title: "File error",
+            description: "File is likely too big",
+          });
 
           return;
         }
@@ -187,7 +187,6 @@ export const FileUploader = forwardRef<
         if (rejectedFiles.length > 0) {
           for (let i = 0; i < rejectedFiles.length; i++) {
             if (rejectedFiles[i].errors[0]?.code === "file-too-large") {
-              
               toast({
                 title: "File is too large",
                 description: `Max size is ${maxSize / 1024 / 1024}MB`,
@@ -195,9 +194,9 @@ export const FileUploader = forwardRef<
               break;
             }
             if (rejectedFiles[i].errors[0]?.message) {
-                toast({
-                    title: rejectedFiles[i].errors[0].message,
-                  });
+              toast({
+                title: rejectedFiles[i].errors[0].message,
+              });
               break;
             }
           }
@@ -242,10 +241,9 @@ export const FileUploader = forwardRef<
       >
         <div
           ref={ref}
-          tabIndex={0}
           onKeyDownCapture={handleKeyDown}
           className={cn(
-            "grid w-full focus:outline-none overflow-hidden ",
+            "grid w-full overflow-hidden focus:outline-none ",
             className,
             {
               "gap-2": value && value.length > 0,
@@ -271,16 +269,12 @@ export const FileUploaderContent = forwardRef<
   const containerRef = useRef<HTMLDivElement>(null);
 
   return (
-    <div
-      className={cn("w-full px-1")}
-      ref={containerRef}
-      aria-description="content file holder"
-    >
+    <div className={cn("w-full px-1")} ref={containerRef}>
       <div
         {...props}
         ref={ref}
         className={cn(
-          "flex rounded-xl gap-1",
+          "flex gap-1 rounded-xl",
           orientation === "horizontal" ? "flex-raw flex-wrap" : "flex-col",
           className,
         )}
@@ -304,13 +298,13 @@ export const FileUploaderItem = forwardRef<
       ref={ref}
       className={cn(
         buttonVariants({ variant: "ghost" }),
-        "h-6 p-1 justify-between cursor-pointer relative",
+        "relative h-6 cursor-pointer justify-between p-1",
         className,
         isSelected ? "bg-muted" : "",
       )}
       {...props}
     >
-      <div className="font-medium leading-none tracking-tight flex items-center gap-1.5 h-full w-full">
+      <div className="flex h-full w-full items-center gap-1.5 font-medium leading-none tracking-tight">
         {children}
       </div>
       <button
@@ -322,7 +316,7 @@ export const FileUploaderItem = forwardRef<
         onClick={() => removeFileFromSet(index)}
       >
         <span className="sr-only">remove item {index}</span>
-        <RemoveIcon className="w-4 h-4 hover:stroke-destructive duration-200 ease-in-out" />
+        <RemoveIcon className="h-4 w-4 duration-200 ease-in-out hover:stroke-destructive" />
       </button>
     </div>
   );
@@ -341,19 +335,18 @@ export const FileInput = forwardRef<
       ref={ref}
       {...props}
       className={`relative w-full ${
-        isLOF ? "opacity-50 cursor-not-allowed " : "cursor-pointer "
+        isLOF ? "cursor-not-allowed opacity-50 " : "cursor-pointer "
       }`}
     >
       <div
         className={cn(
-          `w-full rounded-lg duration-300 ease-in-out
-         ${
-           dropzoneState.isDragAccept
-             ? "border-green-500"
-             : dropzoneState.isDragReject || isFileTooBig
-               ? "border-red-500"
-               : "border-gray-300"
-         }`,
+          `w-full rounded-lg duration-300 ease-in-out ${
+            dropzoneState.isDragAccept
+              ? "border-green-500"
+              : dropzoneState.isDragReject || isFileTooBig
+                ? "border-red-500"
+                : "border-gray-300"
+          }`,
           className,
         )}
         {...rootProps}

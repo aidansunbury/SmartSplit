@@ -56,8 +56,8 @@ import { useQueryState } from "nuqs";
 import {
   type SubmitErrorHandler,
   type SubmitHandler,
-  useForm,
   useFieldArray,
+  useForm,
 } from "react-hook-form";
 import { currencyValidator } from "~/lib/currencyValidator";
 import {
@@ -73,14 +73,14 @@ import {
 import { format } from "date-fns";
 import type { InferSelectModel } from "drizzle-orm";
 import { CategoryIconMap } from "~/components/ExpenseCategoryIcons";
+import { Checkbox } from "~/components/ui/checkbox";
 import { dateValidator } from "~/lib/dateValidator";
 import type { expenses } from "~/server/db/schema";
 import { expenseCategories } from "~/server/db/schema";
 import { api } from "~/trpc/react";
-import { Checkbox } from "~/components/ui/checkbox";
 
-import { Avatar, AvatarImage } from "~/components/ui/avatar";
 import clsx from "clsx";
+import { Avatar, AvatarImage } from "~/components/ui/avatar";
 
 const categories = expenseCategories.enumValues.map((category) => ({
   value: category,
@@ -503,7 +503,7 @@ export function EditExpense({
                     </div>
                   );
                 })}
-                <span className="text-destructive font-bold py-2">
+                <span className="py-2 font-bold text-destructive">
                   {formState.errors[""]?.message}
                 </span>
               </div>

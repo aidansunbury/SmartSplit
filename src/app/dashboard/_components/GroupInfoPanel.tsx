@@ -1,18 +1,38 @@
 "use client";
 
-import clsx from "clsx";
-import { Crown, Settings, UserPlus } from "lucide-react";
-import { useQueryState } from "nuqs";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
+import clsx from "clsx";
+import { Crown, Settings, UserPlus, LogOut } from "lucide-react";
+import { useQueryState } from "nuqs";
 import { Button } from "~/components/ui/button";
 import { formatCurrency } from "~/lib/currencyFormat";
 import { api } from "~/trpc/react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { useRouter } from "next/navigation";
 
 export function GroupInfoPanel() {
   const [group] = useQueryState("group");
   const [_settings, setSettings] = useQueryState("settings");
   const [groupWithMembers] = api.group.get.useSuspenseQuery({
     groupId: group as string,
+  });
+  const router = useRouter();
+  const utils = api.useUtils();
+  const { mutate: leaveGroup } = api.group.leave.useMutation({
+    onSuccess: () => {
+      utils.group.list.invalidate();
+      router.push("/dashboard");
+    },
   });
 
   return (
@@ -71,6 +91,38 @@ export function GroupInfoPanel() {
           <Settings className="h-6 w-6" />
           Group Settings
         </Button>
+
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant={"outline"} className="w-full justify-start">
+              <LogOut className="h-6 w-6" />
+              Leave Group
+            </Button>
+          </AlertDialogTrigger>
+
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                Are you sure you want to leave {groupWithMembers.name}?
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                You will need to use an up to date join code to rejoin{" "}
+                {groupWithMembers.name}. You can only leave the group if you
+                have a balance of 0 and are not the owner.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => leaveGroup({ groupId: group ?? "" })}
+                variant={"destructive"}
+              >
+                <LogOut className="mr-2" />
+                Leave Group
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );

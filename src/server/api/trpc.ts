@@ -113,7 +113,7 @@ const timingMiddleware = t.middleware(async ({ next, path }) => {
 
   const end = Date.now();
   console.log(
-    `[TRPC] ${path} took ${end - start}ms to execute ${t._config.isDev && `including ${waitMs}ms of artificial delay`}`,
+    `${end.toString()} [TRPC] ${path} took ${end - start}ms to execute ${t._config.isDev && `including ${waitMs}ms of artificial delay`}`,
   );
 
   return result;
@@ -162,6 +162,7 @@ export const groupProcedure = protectedProcedure
         and(
           eq(usersToGroups.userId, ctx.session.user.id),
           eq(usersToGroups.groupId, input.groupId),
+          eq(usersToGroups.active, true),
         ),
       );
     if (!userInGroup) {

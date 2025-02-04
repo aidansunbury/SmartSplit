@@ -1,4 +1,4 @@
-# SmartSplit Staff Solution
+# SmartSplit
 
 ## Setup
 ```bash

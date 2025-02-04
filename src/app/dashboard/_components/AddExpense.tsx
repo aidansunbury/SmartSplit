@@ -1,5 +1,6 @@
 "use client";
 
+import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -11,12 +12,11 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { format } from "date-fns";
-import { Avatar, AvatarImage } from "@/components/ui/avatar";
 
 import { Input } from "@/components/ui/input";
+import clsx from "clsx";
 import { useState } from "react";
 import { useBeforeunload } from "react-beforeunload";
-import clsx from "clsx";
 
 import {
   Command,
@@ -57,8 +57,8 @@ import { useQueryState } from "nuqs";
 import {
   type SubmitErrorHandler,
   type SubmitHandler,
-  useForm,
   useFieldArray,
+  useForm,
 } from "react-hook-form";
 import { currencyValidator } from "~/lib/currencyValidator";
 import {
@@ -74,12 +74,10 @@ import {
 import { Checkbox } from "~/components/ui/checkbox";
 import { formatCurrency } from "~/lib/currencyFormat";
 import { cn } from "~/lib/utils";
+import { createShares } from "~/lib/utils";
 import { expenseCategories } from "~/server/db/schema";
 import type { ExpenseShare } from "~/server/db/schema";
 import { api } from "~/trpc/react";
-
-import { DevTool } from "@hookform/devtools";
-import { createShares } from "~/lib/utils";
 
 const categories = expenseCategories.enumValues.map((category) => ({
   value: category,
@@ -534,7 +532,7 @@ export function AddExpense() {
                     </div>
                   );
                 })}
-                <span className="text-destructive font-bold py-2">
+                <span className="py-2 font-bold text-destructive">
                   {formState.errors[""]?.message}
                 </span>
               </div>
