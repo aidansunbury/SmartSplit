@@ -53,6 +53,7 @@ export default function DashboardPage() {
           <ModeToggle />
         </div>
       </header>
+      {groupsLoading && !group && <GroupSkeleton />}
       {!groupsLoading && groups?.length === 0 && <NoGroupsCTA />}
       <Suspense fallback={<GroupSkeleton />}>
         {group && <GroupView groupId={group} />}

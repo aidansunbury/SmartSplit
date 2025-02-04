@@ -19,6 +19,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useRouter } from "next/navigation";
+import { ImportDialog } from "./import/ImportDialog";
 
 export function GroupInfoPanel() {
   const [group] = useQueryState("group");
@@ -123,6 +124,8 @@ export function GroupInfoPanel() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        <ImportDialog />
       </div>
     </div>
   );

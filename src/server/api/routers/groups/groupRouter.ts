@@ -151,8 +151,6 @@ export const groupRouter = createTRPCRouter({
       description: "List all groups the current user is a member of",
     })
     .query(async ({ ctx }) => {
-      // artifical delay
-      await new Promise((resolve) => setTimeout(resolve, 2000));
       const myGroups = await ctx.db.query.usersToGroups.findMany({
         where: and(
           eq(usersToGroups.userId, ctx.session.user.id),
@@ -236,4 +234,7 @@ export const groupRouter = createTRPCRouter({
     });
     return result;
   }),
+  // Import from splitwise
+  // Submit a mapping of splitwise users to our users
+  // for new users, generate a temporary id which will be replaced by their actual id when creating transactions
 });

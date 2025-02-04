@@ -18,6 +18,7 @@ export type UserAvatar = {
   name: string;
   email: string;
   image?: string;
+  id: string;
 };
 
 export function AppSidebar({
@@ -34,7 +35,7 @@ export function AppSidebar({
         </Link>
       </SidebarHeader>
       <SidebarContent>
-        <SidebarGroups />
+        <SidebarGroups user={user} />
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={user} />
