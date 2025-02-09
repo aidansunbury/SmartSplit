@@ -32,6 +32,8 @@ export const users = createTable("user", {
     .$defaultFn(() => createPrefixedUlid("usr")),
   name: varchar("name", { length: 255 }).notNull(),
   email: varchar("email", { length: 255 }).notNull(),
+  // Only true if not tied to an actual user who has signed in, and is only used to represent a user from a splitwise import
+  unlinked: boolean("unlinked").notNull().default(false),
   emailVerified: timestamp("email_verified", {
     mode: "date",
     withTimezone: true,

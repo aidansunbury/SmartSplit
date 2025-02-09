@@ -5,12 +5,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CopyButton } from "~/components/ui/copy-button";
-import { api } from "~/trpc/react";
 import { env } from "~/env";
+import { api } from "~/trpc/react";
 
+import { RefreshCcw } from "lucide-react";
 import { useQueryState } from "nuqs";
 import { Button } from "~/components/ui/button";
-import { RefreshCcw } from "lucide-react";
 
 export function SettingsDialog() {
   const [settings, setSettings] = useQueryState("settings");

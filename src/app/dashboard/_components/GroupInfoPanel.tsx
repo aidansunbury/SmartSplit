@@ -1,12 +1,5 @@
 "use client";
 
-import { Avatar, AvatarImage } from "@/components/ui/avatar";
-import clsx from "clsx";
-import { Crown, Settings, UserPlus, LogOut } from "lucide-react";
-import { useQueryState } from "nuqs";
-import { Button } from "~/components/ui/button";
-import { formatCurrency } from "~/lib/currencyFormat";
-import { api } from "~/trpc/react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,7 +11,14 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Avatar, AvatarImage } from "@/components/ui/avatar";
+import clsx from "clsx";
+import { Crown, LogOut, Settings, UserPlus } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useQueryState } from "nuqs";
+import { Button } from "~/components/ui/button";
+import { formatCurrency } from "~/lib/currencyFormat";
+import { api } from "~/trpc/react";
 import { ImportDialog } from "./import/ImportDialog";
 
 export function GroupInfoPanel() {
@@ -125,7 +125,7 @@ export function GroupInfoPanel() {
           </AlertDialogContent>
         </AlertDialog>
 
-        <ImportDialog />
+        {group && <ImportDialog groupId={group} />}
       </div>
     </div>
   );

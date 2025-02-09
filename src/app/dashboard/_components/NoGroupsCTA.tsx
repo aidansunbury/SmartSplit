@@ -7,7 +7,7 @@ export const NoGroupsCTA = () => {
       <h1 className="mb-4 font-semibold text-3xl text-foreground">
         No Groups Yet
       </h1>
-      <p className="mb-8 text-gray-600 text-accent-foreground">
+      <p className="mb-8 text-accent-foreground text-gray-600">
         Create or join a group using the buttons on the sidebar.
       </p>
     </section>

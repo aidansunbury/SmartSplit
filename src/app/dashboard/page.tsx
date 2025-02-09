@@ -7,8 +7,8 @@ import { ModeToggle } from "~/components/theme-toggle";
 import { useToast } from "~/hooks/use-toast";
 import { api } from "~/trpc/react";
 
-import { GroupSkeleton } from "./_components/feed/FeedSkeleton";
 import { NoGroupsCTA } from "./_components/NoGroupsCTA";
+import { GroupSkeleton } from "./_components/feed/FeedSkeleton";
 
 import { GroupView } from "./_components/GroupView";
 

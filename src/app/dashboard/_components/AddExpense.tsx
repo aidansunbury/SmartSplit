@@ -298,10 +298,7 @@ export function AddExpense() {
                 <FormItem className="flex flex-col">
                   <FormLabel optional={false}>Date </FormLabel>
                   <Popover>
-                    <PopoverTrigger
-                      asChild
-                      onClick={() => console.log("popover clicked")}
-                    >
+                    <PopoverTrigger asChild>
                       <FormControl>
                         <Button
                           variant={"outline"}

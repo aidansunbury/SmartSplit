@@ -7,11 +7,11 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import { useLocalStorage } from "@uidotdev/usehooks";
 import { useQueryState } from "nuqs";
 import { api } from "~/trpc/react";
 import { CreateGroup } from "./CreateGroup";
 import { JoinGroup } from "./JoinGroup";
-import { useLocalStorage } from "@uidotdev/usehooks";
 import type { UserAvatar } from "./app-sidebar";
 export const SidebarGroups = ({ user }: { user: UserAvatar }) => {
   const { data: groups } = api.group.list.useQuery();

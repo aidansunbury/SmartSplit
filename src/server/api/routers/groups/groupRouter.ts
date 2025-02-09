@@ -234,7 +234,17 @@ export const groupRouter = createTRPCRouter({
     });
     return result;
   }),
+  importFromSplitwise: groupProcedure.mutation(async ({ ctx, input }) => {
+    // Validate that the sum of all balance updates for a user + their total (current) balance is 0
+    // Create unlinked users for any new users
+  }),
+
   // Import from splitwise
   // Submit a mapping of splitwise users to our users
   // for new users, generate a temporary id which will be replaced by their actual id when creating transactions
+
+  // Assume unlinked account
+  // This is when a user joins a group after any splitwise transactions may have been imported
+  // Replace the temporary user in all transactions with the actual user
+  //! The way this works currently, will have to loop through all of the expenses since the shares aren't indexed by user id
 });

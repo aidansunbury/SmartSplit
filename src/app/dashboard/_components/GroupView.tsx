@@ -1,9 +1,10 @@
 "use client";
-import { api } from "~/trpc/react";
 import fuzzysort from "fuzzysort";
 import { useMemo, useState } from "react";
 import { Suspense } from "react";
+import { api } from "~/trpc/react";
 
+import { useDebounce } from "@uidotdev/usehooks";
 import { AddExpense } from "./AddExpense";
 import { AddPayment } from "./AddPayment";
 import { GroupInfoPanel } from "./GroupInfoPanel";
@@ -11,7 +12,6 @@ import SearchBar from "./SearchBar";
 import { SettingsDialog } from "./SettingsDialog";
 import { Feed } from "./feed/Feed";
 import { FeedSkeleton } from "./feed/FeedSkeleton";
-import { useDebounce } from "@uidotdev/usehooks";
 
 export const GroupView = ({ groupId }: { groupId: string }) => {
   const [group] = api.group.get.useSuspenseQuery({

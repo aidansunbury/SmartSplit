@@ -14,25 +14,23 @@ export function readCSVFile(file: File): Promise<string> {
   });
 }
 
-interface Transaction {
+export type Transaction = {
   timestamp: number;
   description: string;
   category: string;
   cost: number;
   currency: string;
   type: "payment" | "expense";
+  // Maps the temporary person ID to the amount their balance should change (may be 0)
   amounts: Record<string, number>;
-}
+};
 
-interface Person {
+export type Person = {
   id: string;
   name: string;
-}
+};
 
-export function parseFinancialCSV(csvContent: string): {
-  people: Person[];
-  transactions: Transaction[];
-} {
+export function parseFinancialCSV(csvContent: string) {
   // Ensure csvContent is a string and not undefined/null
   if (!csvContent || typeof csvContent !== "string") {
     throw new Error("Invalid CSV content");
@@ -47,7 +45,7 @@ export function parseFinancialCSV(csvContent: string): {
   console.log(headers);
   // Extract people names from headers (skip first 5 columns)
   const people: Person[] = headers.slice(5).map((name) => ({
-    id: `temp_${name?.toLowerCase().replace(/\s+/g, "_") || "unknown"}`,
+    id: crypto.randomUUID(),
     name: name?.trim() || "Unknown",
   }));
   console.log(people);
